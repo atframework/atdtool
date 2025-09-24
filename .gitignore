@@ -1,0 +1,8 @@
+# Go module sum files
+*.sum
+
+# Build path
+build
+build_*
+
+.vscode

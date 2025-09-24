@@ -1,0 +1,22 @@
+set(CMAKE_CURRENT_BINARY_DIR "${PROJECT_INSTALL_BAS_DIR}/bin")
+
+set(OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
+execute_process(
+  COMMAND git describe --all --contains HEAD
+  TIMEOUT 3
+  OUTPUT_VARIABLE ATDTOOL_VERSION_GIT_DESCRIBE
+  OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+if(ATDTOOL_VERSION_GIT_DESCRIBE MATCHES ".*/([^/]*)$")
+  set(ATDTOOL_VERSION "${CMAKE_MATCH_1}")
+else()
+  set(ATDTOOL_VERSION "${ATDTOOL_VERSION_GIT_DESCRIBE}")
+endif()
+
+if(ATDTOOL_VERSION STREQUAL "")
+  message(FATAL_ERROR "get atdtool version failed")
+endif()
+
+set(CMAKE_GO_FLAGS -ldflags "-X main.toolVersion=${ATDTOOL_VERSION}")
+
+add_go_executable(atdtool)
