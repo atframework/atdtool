@@ -60,8 +60,8 @@ jobs:
           export "${ENV_VARS[@]}"
           mkdir -p target/bin
           go mod tidy
-          go build -o target/bin/ ./cmd/atdtool/ 
-          go build -o target/bin/ ./cmd/logarchive/
+          go build -o target/bin/ -ldflags "-X main.toolVersion=${{ github.ref_name }}" ./cmd/atdtool/ 
+          go build -o target/bin/ -ldflags "-X main.toolVersion=${{ github.ref_name }}" ./cmd/logarchive/
       - name: Package
         shell: bash
         run: |
@@ -87,9 +87,9 @@ jobs:
         os: [macOS-latest]
         rust: [stable]
         target:
-          - GOOS=darwin,GOARCH=amd64,CGO_ENABLED=0
-          - GOOS=darwin,GOARCH=arm64,CGO_ENABLED=0
-          - GOOS=ios,GOARCH=arm64,CGO_ENABLED=0
+          - GOOS=darwin,GOARCH=amd64
+          - GOOS=darwin,GOARCH=arm64
+          - GOOS=ios,GOARCH=arm64
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
@@ -107,8 +107,8 @@ jobs:
           export "${ENV_VARS[@]}"
           mkdir -p target/bin
           go mod tidy
-          go build -o target/bin/ ./cmd/atdtool/ 
-          go build -o target/bin/ ./cmd/logarchive/
+          go build -o target/bin/ -ldflags "-X main.toolVersion=${{ github.ref_name }}" ./cmd/atdtool/ 
+          go build -o target/bin/ -ldflags "-X main.toolVersion=${{ github.ref_name }}" ./cmd/logarchive/
       - name: Package
         shell: bash
         run: |
@@ -160,8 +160,8 @@ jobs:
           }
           New-Item -ItemType Directory -Force -Path target/bin
           go mod tidy
-          go build -o target/bin/ ./cmd/atdtool/ 
-          go build -o target/bin/ ./cmd/logarchive/
+          go build -o target/bin/ -ldflags "-X main.toolVersion=${{ github.ref_name }}" ./cmd/atdtool/ 
+          go build -o target/bin/ -ldflags "-X main.toolVersion=${{ github.ref_name }}" ./cmd/logarchive/
       - name: Package
         shell: pwsh
         run: |
