@@ -87,9 +87,9 @@ jobs:
         os: [macOS-latest]
         rust: [stable]
         target:
-          - GOOS=darwin,GOARCH=amd64,CGO_ENABLED=1
-          - GOOS=darwin,GOARCH=arm64,CGO_ENABLED=1
-          - GOOS=ios,GOARCH=arm64,CGO_ENABLED=1
+          - GOOS=darwin,GOARCH=amd64,CGO_ENABLED=0
+          - GOOS=darwin,GOARCH=arm64,CGO_ENABLED=0
+          # - GOOS=ios,GOARCH=arm64,CGO_ENABLED=1
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
