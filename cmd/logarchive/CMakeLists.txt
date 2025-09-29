@@ -1,0 +1,22 @@
+set(CMAKE_CURRENT_BINARY_DIR "${PROJECT_INSTALL_BAS_DIR}/bin")
+
+set(OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
+execute_process(
+  COMMAND git describe --all --contains HEAD
+  TIMEOUT 3
+  OUTPUT_VARIABLE LOG_ARCHIVE_VERSION_GIT_DESCRIBE
+  OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+if(LOG_ARCHIVE_VERSION_GIT_DESCRIBE MATCHES ".*/([^/]*)$")
+  set(LOG_ARCHIVE_VERSION "${CMAKE_MATCH_1}")
+else()
+  set(LOG_ARCHIVE_VERSION "${LOG_ARCHIVE_VERSION_GIT_DESCRIBE}")
+endif()
+
+if(LOG_ARCHIVE_VERSION STREQUAL "")
+  message(FATAL_ERROR "get file-archive version failed")
+endif()
+
+set(CMAKE_GO_FLAGS -ldflags "-X main.toolVersion=${LOG_ARCHIVE_VERSION}")
+
+add_go_executable(log-archive)

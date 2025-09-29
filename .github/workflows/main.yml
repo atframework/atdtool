@@ -1,0 +1,189 @@
+name: "Build"
+
+on: # @see https://help.github.com/en/articles/events-that-trigger-workflows#webhook-events
+  push:
+    branches: # Array of patterns that match refs/heads
+      - main # Push events on master branch
+    tags:
+      - "v*"
+  pull_request:
+    branches: [main]
+
+jobs:
+  format: # job id, can be any string
+    # Job name is Build And Publish
+    name: Build
+    # This job runs on Linux
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        toolchain: [stable]
+        target: [x86_64-unknown-linux-gnu]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          submodules: true
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: "go.mod"
+
+  linux_build: # job id, can be any string
+    # Job name is Build And Publish
+    name: Linux Build
+    # This job runs on Linux
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        rust: [stable]
+        target:
+          - GOOS=linux,GOARCH=amd64,CGO_ENABLED=0
+          - GOOS=linux,GOARCH=arm64,CGO_ENABLED=0
+          - GOOS=android,GOARCH=arm64,CGO_ENABLED=0
+    # see https://github.com/rust-embedded/cross
+    # Github action is run under a docker pod but cross need docker service
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          submodules: true
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: "go.mod"
+      - name: Go build
+        shell: bash
+        run: |
+          set -x
+          ENV_VARS=($(echo "${{ matrix.target }}" | tr ',' '\n'))
+          export "${ENV_VARS[@]}"
+          mkdir -p target/bin
+          go mod tidy
+          go build -o target/bin/ -ldflags "-X main.toolVersion=${{ github.ref_name }}" ./cmd/atdtool/ 
+          go build -o target/bin/ -ldflags "-X main.toolVersion=${{ github.ref_name }}" ./cmd/logarchive/
+      - name: Package
+        shell: bash
+        run: |
+          ENV_VARS=($(echo "${{ matrix.target }}" | tr ',' '\n'))
+          export "${ENV_VARS[@]}"
+          cd target
+          tar -zcvf atdtool-${GOOS}-${GOARCH}.tar.gz bin
+      - uses: xresloader/upload-to-github-release@v1
+        if: ${{ github.ref_type == 'tag' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          file: "target/*.tar.gz"
+          tags: true
+          draft: true
+          overwrite: true
+  macos_build: # job id, can be any string
+    # Job name is Build And Publish
+    name: macOS Build
+    # This job runs on Linux
+    strategy:
+      matrix:
+        os: [macOS-latest]
+        rust: [stable]
+        target:
+          - GOOS=darwin,GOARCH=amd64,CGO_ENABLED=0
+          - GOOS=darwin,GOARCH=arm64,CGO_ENABLED=0
+          # - GOOS=ios,GOARCH=arm64,CGO_ENABLED=1
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          submodules: true
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: "go.mod"
+      - name: Go build
+        shell: bash
+        run: |
+          set -x
+          ENV_VARS=($(echo "${{ matrix.target }}" | tr ',' '\n'))
+          export "${ENV_VARS[@]}"
+          mkdir -p target/bin
+          go mod tidy
+          go build -o target/bin/ -ldflags "-X main.toolVersion=${{ github.ref_name }}" ./cmd/atdtool/ 
+          go build -o target/bin/ -ldflags "-X main.toolVersion=${{ github.ref_name }}" ./cmd/logarchive/
+      - name: Package
+        shell: bash
+        run: |
+          ENV_VARS=($(echo "${{ matrix.target }}" | tr ',' '\n'))
+          export "${ENV_VARS[@]}"
+          cd target
+          tar -zcvf atdtool-${GOOS}-${GOARCH}.tar.gz bin
+      - uses: xresloader/upload-to-github-release@v1
+        if: ${{ github.ref_type == 'tag' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          file: "target/*.tar.gz"
+          tags: true
+          draft: true
+          overwrite: true
+  windows_build: # job id, can be any string
+    # Job name is Build And Publish
+    name: Windows Build
+    # This job runs on Linux
+    strategy:
+      matrix:
+        os: [windows-latest]
+        rust: [stable]
+        target:
+          - GOOS=windows,GOARCH=amd64,CGO_ENABLED=0
+          - GOOS=windows,GOARCH=arm64,CGO_ENABLED=0
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          submodules: true
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: "go.mod"
+      - name: Go build
+        shell: pwsh
+        run: |
+          $envPairs = "${{ matrix.target }}" -split ','
+          foreach ($pair in $envPairs) {
+            $key, $value = $pair -split '=', 2
+            [System.Environment]::SetEnvironmentVariable($key, $value, [System.EnvironmentVariableTarget]::Process)
+            Write-Host "Set $key=$value"
+          }
+          New-Item -ItemType Directory -Force -Path target/bin
+          go mod tidy
+          go build -o target/bin/ -ldflags "-X main.toolVersion=${{ github.ref_name }}" ./cmd/atdtool/ 
+          go build -o target/bin/ -ldflags "-X main.toolVersion=${{ github.ref_name }}" ./cmd/logarchive/
+      - name: Package
+        shell: pwsh
+        run: |
+          $envPairs = "${{ matrix.target }}" -split ','
+          foreach ($pair in $envPairs) {
+            $key, $value = $pair -split '=', 2
+            [System.Environment]::SetEnvironmentVariable($key, $value, [System.EnvironmentVariableTarget]::Process)
+            Write-Host "Set $key=$value"
+          }
+          cd "./target/"
+
+          $zipName = "atdtool-$($env:GOOS)-$($env:GOARCH).zip"
+          if ( Test-Path $zipName ) { Remove-Item -Force $zipName }
+          Compress-Archive -DestinationPath $zipName -Path bin
+          Get-ChildItem
+          Get-ChildItem -Recurse bin
+      - uses: xresloader/upload-to-github-release@v1
+        if: ${{ github.ref_type == 'tag' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          file: "target/*.zip"
+          tags: true
+          draft: true
+          overwrite: true

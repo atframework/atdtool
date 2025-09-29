@@ -1,0 +1,17 @@
+# Go module sum files
+*.sum
+*.d
+*.exe
+*.so
+*.a
+*.lib
+*.dll
+*.dylib
+
+# Build path
+build
+build_*
+
+.vscode
+
+/target
