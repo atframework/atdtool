@@ -20,7 +20,6 @@ type RenderValue struct {
 
 // Config is a set of configuration
 type Config struct {
-	Center     *CenterConf     `module:"nonCloudNativeCenter"`
 	WhiteList  *WhiteListConf  `module:"access_whitelist"`
 	Proc       *ProcConf       `module:"proc"`
 	Host       *HostConf       `module:"host"`
@@ -33,12 +32,11 @@ type nonCloudNativeConf interface {
 }
 
 var confLoader = map[string]func(string) (nonCloudNativeConf, error){
-	"nonCloudNativeCenter": loadCenterConfig,
-	"access_whitelist":     loadWhiterListConfig,
-	"proc":                 loadProcConfig,
-	"host":                 loadHostConfig,
-	"bus_relation":         loadTbusConfig,
-	"proc_deploy":          loadProcDeployData,
+	"access_whitelist": loadWhiterListConfig,
+	"proc":             loadProcConfig,
+	"host":             loadHostConfig,
+	"bus_relation":     loadTbusConfig,
+	"proc_deploy":      loadProcDeployData,
 }
 
 // LoadConfig load nonCloudNative configuration data
@@ -79,12 +77,6 @@ func LoadConfig(cfgPaths []string) (*Config, error) {
 			reflect.ValueOf(config).Elem().Field(i).Set(reflect.ValueOf(rs))
 		}
 	}
-
-	// set atdtool configuration file path
-	config.Center.ConfigValueDir = strings.Join(cfgPaths, ",")
-
-	// set center configuration tbus addr template
-	config.Center.AddrTemple = config.TBus.BusAddrTemplate
 
 	// we shoud verify proc deploy data.
 	if err := config.verifyProcDeploy(); err != nil {
