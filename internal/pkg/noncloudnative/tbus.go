@@ -184,7 +184,7 @@ func (c *TbusConf) GetMaxInsID() int {
 func (c *TbusConf) XMLExport(outPath string) error {
 	outfile := path.Join(outPath, "bus_relation.xml")
 	wrapCfg := struct {
-		XMLName struct{} `xml:"nonCloudNativecenter"`
+		XMLName struct{} `xml:"nonCloudNativeCenter"`
 		BusCfg  *TbusConf
 	}{BusCfg: c}
 

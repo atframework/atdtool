@@ -39,7 +39,7 @@ atframework deploy tool , 用于atframework的部署工具。
 - Values指定目录的优先级按照从左到右依次递增
 
 ```bash
---values default,default_tgf,tgf_dev # 优先级关系 default < default_tgf < tgf_dev
+--values default,dev # 优先级关系 default < dev
 ```
 
 ## Module使用说明
@@ -50,26 +50,16 @@ atframework deploy tool , 用于atframework的部署工具。
 ```bash
 # 通用模块可以默认启用
 # 通用模块示例
-# modules/tbuspp.yaml
+# modules/etcd.yaml
 enabled: true
-
-# 非通用模块建议关闭默认启用，按需引入模块
-# 非通用模块示例
-# modules/ace.yaml
-enabled: false
 ```
 
 - 服务启用和关闭模块方式
 
 ```bash
-# gamesvr启用apollo模块示例
-# charts/gamesvr/values.yaml
-apollo:
-  enabled: true
-
-# tconnd关闭hpa模块示例
-# charts/tconnd/values.yaml
-hpa:
+# lobbysvr关闭etcd模块示例
+# charts/lobbysvr/etcd.yaml
+etcd:
   enabled: false
 ```
 
@@ -78,7 +68,7 @@ hpa:
 ```bash
 # 模板引用模块保护示例
 # libapp/templates/_atapp.logic.yaml.tpl
-{{- if .Values.tbuspp }}
+{{- if .Values.etcd }}
 ...
 {{- end }}
 ```
@@ -132,12 +122,12 @@ disabled_pre_alloc_alias: []
 # 错误示例
 # gamesvr.yaml
 gamesvr:
-  ace:
+  etcd:
     enable_sdk: false
 
 # 正确示例
 # gamesvr.yaml
-ace:
+etcd:
   enable_sdk: false
 ```
 
@@ -168,7 +158,7 @@ Flags:
 --set battlesvr.ds.default.max_fps=0
 
 # 指定数组中某个元素值
---set battlesvr.ds.default.oss_log_server_list[0]="11.152.245.181:7788"
+--set battlesvr.ds.default.log_server_list[0]="11.152.245.181:7788"
 
 # 指定整个数组值
 --set battlesvr.ds.default.pre_alloc_ds_maps="{1,5}"

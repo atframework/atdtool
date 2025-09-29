@@ -97,7 +97,7 @@ type nonCloudNativeProcGroupNode struct {
 
 // nonCloudNativeProcConf represents a proc description in xml configuration
 type nonCloudNativeProcConf struct {
-	XMLName xml.Name `xml:"nonCloudNativecenter"`
+	XMLName xml.Name `xml:"nonCloudNativeCenter"`
 	Cluster ClusterLayer
 	Groups  []*nonCloudNativeProcGroupNode `xml:"ProcGroup"`
 }

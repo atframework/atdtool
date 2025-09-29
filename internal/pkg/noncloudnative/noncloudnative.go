@@ -20,7 +20,7 @@ type RenderValue struct {
 
 // Config is a set of configuration
 type Config struct {
-	Center     *CenterConf     `module:"nonCloudNativecenter"`
+	Center     *CenterConf     `module:"nonCloudNativeCenter"`
 	WhiteList  *WhiteListConf  `module:"access_whitelist"`
 	Proc       *ProcConf       `module:"proc"`
 	Host       *HostConf       `module:"host"`
@@ -33,7 +33,7 @@ type nonCloudNativeConf interface {
 }
 
 var confLoader = map[string]func(string) (nonCloudNativeConf, error){
-	"nonCloudNativecenter": loadCenterConfig,
+	"nonCloudNativeCenter": loadCenterConfig,
 	"access_whitelist":     loadWhiterListConfig,
 	"proc":                 loadProcConfig,
 	"host":                 loadHostConfig,

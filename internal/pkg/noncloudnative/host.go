@@ -18,7 +18,7 @@ type Host struct {
 
 // HostConf is host configuration
 type HostConf struct {
-	XMLName                xml.Name `xml:"nonCloudNativecenter"`
+	XMLName                xml.Name `xml:"nonCloudNativeCenter"`
 	AllowDuplicatedInnerIP bool     `xml:"-" json:"allow_duplicated_inner_ip"`
 	Hosts                  []*Host  `xml:"HostTab>Host" json:"hosts"`
 }

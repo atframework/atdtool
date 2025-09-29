@@ -116,7 +116,7 @@ type nonCloudNativeClusterDeploy struct {
 
 // nonCloudNativeProcDeployConf represents a nonCloudNative configuration
 type nonCloudNativeProcDeployConf struct {
-	XMLName xml.Name `xml:"nonCloudNativecenter"`
+	XMLName xml.Name `xml:"nonCloudNativeCenter"`
 	Cluster nonCloudNativeClusterDeploy
 }
 

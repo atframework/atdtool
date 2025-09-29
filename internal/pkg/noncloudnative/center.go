@@ -11,7 +11,7 @@ import (
 
 // CenterConf nonCloudNative center configuration
 type CenterConf struct {
-	XMLName               xml.Name `xml:"nonCloudNativecenter"`
+	XMLName               xml.Name `xml:"nonCloudNativeCenter"`
 	ConfigTemplateDir     string   `xml:"ConfigTemplatePath,attr" json:"config_template_dir"`
 	ConfigValueDir        string   `xml:"ConfigValueDir,attr" json:"-"`
 	AutoScriptDir         string   `xml:"AutoScriptDir,attr" json:"auto_script_dir"`
@@ -59,21 +59,21 @@ func loadCenterConfig(filename string) (nonCloudNativeConf, error) {
 	return config, nil
 }
 
-// validate verify that nonCloudNativecenter configuration data is illegal.
+// validate verify that nonCloudNativeCenter configuration data is illegal.
 func (c *CenterConf) validate() error {
 	return nil
 }
 
 // XMLExport export nonCloudNative center xml configuration
 func (c *CenterConf) XMLExport(outPath string) error {
-	outfile := path.Join(outPath, "nonCloudNativecenter.xml")
+	outfile := path.Join(outPath, "nonCloudNativeCenter.xml")
 	output, err := xml.MarshalIndent(c, "", "    ")
 	if err != nil {
-		return fmt.Errorf("marshal(nonCloudNativecenter.xml): %v", err)
+		return fmt.Errorf("marshal(nonCloudNativeCenter.xml): %v", err)
 	}
 
 	if err := os.WriteFile(outfile, output, 0644); err != nil {
-		return fmt.Errorf("write(nonCloudNativecenter.xml): %v", err)
+		return fmt.Errorf("write(nonCloudNativeCenter.xml): %v", err)
 	}
 
 	return nil
