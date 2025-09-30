@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/fs"
 	"path/filepath"
-	"reflect"
 	"strings"
 
 	"helm.sh/helm/v3/pkg/chart"
@@ -16,7 +15,7 @@ import (
 )
 
 // MergeChartValues merges multiple sources of Helm chart values into a single values map
-func MergeChartValues(chartPath string, valuesPaths []string, remoteVals, optVals map[string]any, nonCloudNativeVal *noncloudnative.RenderValue) (values map[string]any, err error) {
+func MergeChartValues(chartPath string, valuesPaths []string, optVals map[string]any, nonCloudNativeVal *noncloudnative.RenderValue) (values map[string]any, err error) {
 	var chrt *chart.Chart
 	chrt, err = loader.Load(chartPath)
 	if err != nil {
@@ -66,33 +65,11 @@ func MergeChartValues(chartPath string, valuesPaths []string, remoteVals, optVal
 		}
 
 		var m map[string]any
-		m, err = nonCloudNativeVal.Config.ToRenderValues(nonCloudNativeVal.BusAddr, nonCloudNativeVal.Hostname)
+		m, err = nonCloudNativeVal.Config.ToRenderValues(nonCloudNativeVal.BusAddr)
 		if err != nil {
 			return
 		}
 		values = chartutil.CoalesceTables(m, values)
-	}
-
-	if remoteVals != nil {
-		// merge remote global config
-		if v, ok := remoteVals["global"]; ok {
-			if !reflect.ValueOf(v).CanConvert(reflect.TypeOf(map[string]any{})) {
-				err = fmt.Errorf("can not convert to map")
-				return
-			}
-			m := reflect.ValueOf(v).Convert(reflect.TypeOf(map[string]any{})).Interface().(map[string]any)
-			values = chartutil.CoalesceTables(m, values)
-		}
-
-		// merge remote server config
-		if v, ok := remoteVals[name]; ok {
-			if !reflect.ValueOf(v).CanConvert(reflect.TypeOf(map[string]any{})) {
-				err = fmt.Errorf("can not convert to map")
-				return
-			}
-			m := reflect.ValueOf(v).Convert(reflect.TypeOf(map[string]any{})).Interface().(map[string]any)
-			values = chartutil.CoalesceTables(m, values)
-		}
 	}
 
 	// command line options has higher precedence

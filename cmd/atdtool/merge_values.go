@@ -69,13 +69,9 @@ func newMergeValuesCmd(out io.Writer) *cobra.Command {
 func (o *mergeValuesOptions) run(_ io.Writer) (err error) {
 	var (
 		valuePaths []string
-		remoteVals map[string]any
 		optVals    map[string]any
 		vals       map[string]any
 	)
-
-	// TODO: 远程配置中心
-	remoteVals = make(map[string]any)
 
 	valuePaths, err = o.valOpts.MergePaths()
 	if err != nil {
@@ -87,7 +83,7 @@ func (o *mergeValuesOptions) run(_ io.Writer) (err error) {
 		return
 	}
 
-	vals, err = util.MergeChartValues(o.chartPath, valuePaths, remoteVals, optVals, nil)
+	vals, err = util.MergeChartValues(o.chartPath, valuePaths, optVals, nil)
 	if err != nil {
 		return
 	}
