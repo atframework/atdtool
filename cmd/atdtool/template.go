@@ -275,12 +275,21 @@ func render(chrt *chart.Chart, vals chartutil.Values, outPath, outSuffix string)
 		}
 
 		filename := strings.TrimSuffix(path.Base(k), suffix)
-		var outFile string
+
 		if outSuffix != "" {
-			outFile = path.Join(cfgOutPath, filename+outSuffix)
-		} else {
-			outFile = path.Join(cfgOutPath, filename)
+			idx := strings.LastIndex(filename, ".")
+			if idx != -1 {
+				// 存在. 分割
+				left := filename[:idx]
+				right := filename[idx:]
+				filename = left + outSuffix + right
+			} else {
+				// 直接拼接
+				filename = filename + outSuffix
+			}
 		}
+
+		outFile := path.Join(cfgOutPath, filename)
 
 		f, err := os.Create(outFile)
 		if err != nil {
