@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"strings"
 )
 
@@ -117,5 +118,7 @@ func (c *Config) ToRenderValues(addr string) (values map[string]any, err error) 
 	values["world_right_bits"] = c.Deploy.GetAddrWorldRightBits()
 	values["zone_right_bits"] = c.Deploy.GetAddrZoneRightBits()
 	values["func_right_bits"] = c.Deploy.GetAddrFuncRightBits()
+
+	values["atdtool_running_platform"] = runtime.GOOS
 	return
 }
