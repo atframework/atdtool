@@ -105,21 +105,21 @@ func (o *templateOptions) run(out io.Writer) (err error) {
 	if ok {
 		// 覆盖 WorldId 与 ZoneId
 		if w, ok := optGlobalVals["world_id"]; ok {
-			var worldId int = 0
-			if !reflect.ValueOf(w).CanInt() {
+			var worldId uint64 = 0
+			if !reflect.ValueOf(w).CanUint() {
 				return fmt.Errorf("wrong type world_id")
 			}
 
-			worldId = int(reflect.ValueOf(w).Int())
+			worldId = reflect.ValueOf(w).Uint()
 			nonCloudNativeCfg.Deploy.WorldID = worldId
 		}
 		if z, ok := optGlobalVals["zone_id"]; ok {
-			var zoneId int = 0
-			if !reflect.ValueOf(z).CanInt() {
+			var zoneId uint64 = 0
+			if !reflect.ValueOf(z).CanUint() {
 				return fmt.Errorf("wrong type zone_id")
 			}
 
-			zoneId = int(reflect.ValueOf(z).Int())
+			zoneId = reflect.ValueOf(z).Uint()
 			nonCloudNativeCfg.Deploy.ZoneId = zoneId
 		}
 	}
@@ -129,8 +129,8 @@ func (o *templateOptions) run(out io.Writer) (err error) {
 	}
 
 	for _, Instance := range nonCloudNativeCfg.Deploy.Instance {
-		for i := 0; i < Instance.Num; i++ {
-			insID := Instance.StartInsId + i
+		for i := uint64(0); i < Instance.InstanceCount; i++ {
+			insID := Instance.StartInstanceId + i
 			addrCom := []string{}
 			addrCom = append(addrCom, fmt.Sprint(nonCloudNativeCfg.Deploy.WorldID))
 			if Instance.WorldInstance {
@@ -208,7 +208,7 @@ func renderTemplate(chartPath string, vals map[string]any, outPath string) error
 // ProcStartSeq represents a proc start sequence
 type ProcStartSeq struct {
 	Name string
-	Seq  int
+	Seq  uint64
 }
 
 // ProcStartSeqSlice alias for proc start sequence slice

@@ -10,21 +10,21 @@ import (
 )
 
 type DeployUnit struct {
-	Name          string `json:"chart_name"`
-	TypeId        string `json:"instance_type_id"`
-	WorldInstance bool   `json:"world_instance"`
-	Num           int    `json:"num"`
-	StartInsId    int    `json:"start_ins_id"`
+	Name            string `json:"chart_name"`
+	TypeId          string `json:"instance_type_id"`
+	WorldInstance   bool   `json:"world_instance"`
+	InstanceCount   uint64 `json:"instance_count"`
+	StartInstanceId uint64 `json:"start_instance_id"`
 }
 
 type DeployConf struct {
 	BusAddrTemplate string        `json:"bus_addr_template"`
-	WorldID         int           `json:"world_id"`
-	ZoneId          int           `json:"zone_id"`
+	WorldID         uint64        `json:"world_id"`
+	ZoneId          uint64        `json:"zone_id"`
 	Instance        []*DeployUnit `json:"proc_desc"`
 
-	AddrPartBits map[string]uint8
-	MaxInsID     int
+	AddrPartBits  map[string]uint8
+	MaxInstanceID uint64
 }
 
 func loadDeployData(filename string) (interface{}, error) {
@@ -51,15 +51,15 @@ func loadDeployData(filename string) (interface{}, error) {
 			config.AddrPartBits[values[0]] = uint8(bit)
 		}
 	} else {
-		config.AddrPartBits["world"] = 8
-		config.AddrPartBits["zone"] = 8
-		config.AddrPartBits["function"] = 8
-		config.AddrPartBits["instance"] = 8
+		config.AddrPartBits["world"] = 12
+		config.AddrPartBits["zone"] = 12
+		config.AddrPartBits["function"] = 16
+		config.AddrPartBits["instance"] = 24
 		config.BusAddrTemplate = fmt.Sprintf("world:%d.zone:%d.function:%d.instance:%d",
 			config.AddrPartBits["world"], config.AddrPartBits["zone"], config.AddrPartBits["function"], config.AddrPartBits["instance"])
 	}
 
-	config.MaxInsID = int(math.Pow(2, float64(config.AddrPartBits["instance"]))) - 1
+	config.MaxInstanceID = uint64(math.Pow(2, float64(config.AddrPartBits["instance"]))) - 1
 	if err := config.validate(); err != nil {
 		return nil, err
 	}
@@ -67,15 +67,15 @@ func loadDeployData(filename string) (interface{}, error) {
 	return config, nil
 }
 
-func parseBusAddr(addr string) ([]int, error) {
+func parseBusAddr(addr string) ([]uint64, error) {
 	vs := strings.Split(addr, ".")
 	if len(vs) != 4 {
 		return nil, fmt.Errorf("bus address: %s is illegal", addr)
 	}
 
-	vi := make([]int, len(vs))
+	vi := make([]uint64, len(vs))
 	for k, s := range vs {
-		i, err := strconv.Atoi(s)
+		i, err := strconv.ParseUint(s, 10, 64)
 		if err != nil {
 			return nil, fmt.Errorf("bus address: %s is illegal", addr)
 		}
@@ -139,7 +139,7 @@ func (c *DeployConf) GetBriefBusAddrTemplate() string {
 		c.AddrPartBits["world"], c.AddrPartBits["zone"], c.AddrPartBits["function"], c.AddrPartBits["instance"])
 }
 
-// GetMaxInsID returns max instance id.
-func (c *DeployConf) GetMaxInsID() int {
-	return c.MaxInsID
+// GetMaxInstanceID returns max instance id.
+func (c *DeployConf) GetMaxInstanceID() uint64 {
+	return c.MaxInstanceID
 }

@@ -67,23 +67,23 @@ func LoadConfig(cfgPaths []string) (*Config, error) {
 }
 
 // UniqID returns proc uniq id.
-func (c *Config) UniqID(worldID, zoneID, funcID, insID int) uint32 {
-	var uniqID uint32
+func (c *Config) UniqID(worldID, zoneID, funcID, insID uint64) uint64 {
+	var uniqID uint64
 	uniqID = 0
-	uniqID |= uint32(worldID)
+	uniqID |= uint64(worldID)
 	uniqID = uniqID << uint32(c.Deploy.AddrPartBits["zone"])
-	uniqID |= uint32(zoneID)
+	uniqID |= uint64(zoneID)
 	uniqID = uniqID << uint32(c.Deploy.AddrPartBits["function"])
-	uniqID |= uint32(funcID)
+	uniqID |= uint64(funcID)
 	uniqID = uniqID << uint32(c.Deploy.AddrPartBits["instance"])
-	uniqID |= uint32(insID)
+	uniqID |= uint64(insID)
 	return uniqID
 }
 
 // ZoneBase returns base of logic id
-func (c *Config) ZoneBase() uint32 {
-	var maxVal uint32 = 1 << uint32(c.Deploy.AddrPartBits["zone"])
-	var base uint32 = 1
+func (c *Config) ZoneBase() uint64 {
+	var maxVal uint64 = 1 << uint32(c.Deploy.AddrPartBits["zone"])
+	var base uint64 = 1
 
 	for base <= maxVal {
 		base = base * 10
@@ -92,8 +92,8 @@ func (c *Config) ZoneBase() uint32 {
 }
 
 // LogicID returns proc logic id.
-func (c *Config) LogicID(worldID, zoneID int) uint32 {
-	return uint32(worldID)*c.ZoneBase() + uint32(zoneID)
+func (c *Config) LogicID(worldID, zoneID uint64) uint64 {
+	return worldID*c.ZoneBase() + zoneID
 }
 
 func (c *Config) ToRenderValues(addr string) (values map[string]any, err error) {
