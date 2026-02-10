@@ -29,9 +29,46 @@ jobs:
         with:
           go-version-file: "go.mod"
 
+  create_release:
+    name: Create Release
+    if: ${{ github.ref_type == 'tag' }}
+    runs-on: ubuntu-latest
+    outputs:
+      release_id: ${{ steps.create_release.outputs.release_id }}
+    steps:
+      - name: Create Release
+        id: create_release
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const tag = context.ref.replace('refs/tags/', '');
+            let release;
+            try {
+              const { data: existingRelease } = await github.rest.repos.getReleaseByTag({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                tag: tag,
+              });
+              release = existingRelease;
+              core.info(`Found existing release ${release.id} for tag ${tag}`);
+            } catch (e) {
+              const { data: newRelease } = await github.rest.repos.createRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                tag_name: tag,
+                name: tag,
+                draft: true,
+              });
+              release = newRelease;
+              core.info(`Created release ${release.id} for tag ${tag}`);
+            }
+            core.setOutput('release_id', release.id);
+
   linux_build: # job id, can be any string
     # Job name is Build And Publish
     name: Linux Build
+    needs: [create_release]
+    if: ${{ always() }}
     # This job runs on Linux
     strategy:
       matrix:
@@ -69,11 +106,13 @@ jobs:
           export "${ENV_VARS[@]}"
           cd target
           tar -zcvf atdtool-${GOOS}-${GOARCH}.tar.gz bin
-      - uses: xresloader/upload-to-github-release@v1
+      - name: Upload to GitHub Release
         if: ${{ github.ref_type == 'tag' }}
+        uses: xresloader/upload-to-github-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
+          release_id: ${{ needs.create_release.outputs.release_id }}
           file: "target/*.tar.gz"
           tags: true
           draft: true
@@ -81,6 +120,8 @@ jobs:
   macos_build: # job id, can be any string
     # Job name is Build And Publish
     name: macOS Build
+    needs: [create_release]
+    if: ${{ always() }}
     # This job runs on Linux
     strategy:
       matrix:
@@ -116,11 +157,13 @@ jobs:
           export "${ENV_VARS[@]}"
           cd target
           tar -zcvf atdtool-${GOOS}-${GOARCH}.tar.gz bin
-      - uses: xresloader/upload-to-github-release@v1
+      - name: Upload to GitHub Release
         if: ${{ github.ref_type == 'tag' }}
+        uses: xresloader/upload-to-github-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
+          release_id: ${{ needs.create_release.outputs.release_id }}
           file: "target/*.tar.gz"
           tags: true
           draft: true
@@ -128,6 +171,8 @@ jobs:
   windows_build: # job id, can be any string
     # Job name is Build And Publish
     name: Windows Build
+    needs: [create_release]
+    if: ${{ always() }}
     # This job runs on Linux
     strategy:
       matrix:
@@ -138,10 +183,6 @@ jobs:
           - GOOS=windows,GOARCH=arm64,CGO_ENABLED=0
     runs-on: ${{ matrix.os }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          submodules: true
       - name: Checkout
         uses: actions/checkout@v5
         with:
@@ -178,11 +219,13 @@ jobs:
           Compress-Archive -DestinationPath $zipName -Path bin
           Get-ChildItem
           Get-ChildItem -Recurse bin
-      - uses: xresloader/upload-to-github-release@v1
+      - name: Upload to GitHub Release
         if: ${{ github.ref_type == 'tag' }}
+        uses: xresloader/upload-to-github-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
+          release_id: ${{ needs.create_release.outputs.release_id }}
           file: "target/*.zip"
           tags: true
           draft: true

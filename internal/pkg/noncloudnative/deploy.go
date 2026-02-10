@@ -42,11 +42,11 @@ func loadDeployData(filename string) (interface{}, error) {
 		for _, addr := range addrs {
 			values := strings.Split(addr, ":")
 			if len(values) != 2 {
-				return nil, fmt.Errorf("bus addr template: %s is illegal", config.BusAddrTemplate)
+				return nil, fmt.Errorf("bus addr template: %s is illegal, %s should be NAME:BITS", config.BusAddrTemplate, addr)
 			}
 			bit, err := strconv.Atoi(values[1])
 			if err != nil {
-				return nil, fmt.Errorf("bus addr template: %s is illegal", config.BusAddrTemplate)
+				return nil, fmt.Errorf("bus addr template: %s is illegal, %s should be NAME:BITS", config.BusAddrTemplate, addr)
 			}
 			config.AddrPartBits[values[0]] = uint8(bit)
 		}
@@ -70,14 +70,14 @@ func loadDeployData(filename string) (interface{}, error) {
 func parseBusAddr(addr string) ([]uint64, error) {
 	vs := strings.Split(addr, ".")
 	if len(vs) != 4 {
-		return nil, fmt.Errorf("bus address: %s is illegal", addr)
+		return nil, fmt.Errorf("bus address: %s is illegal, should be a.b.c.d", addr)
 	}
 
 	vi := make([]uint64, len(vs))
 	for k, s := range vs {
 		i, err := strconv.ParseUint(s, 10, 64)
 		if err != nil {
-			return nil, fmt.Errorf("bus address: %s is illegal", addr)
+			return nil, fmt.Errorf("bus address: %s is illegal, can not convert %s to uint64", addr, s)
 		}
 		vi[k] = i
 	}
@@ -92,8 +92,8 @@ func (c *DeployConf) validate() error {
 		totalBits = totalBits + v
 	}
 
-	if totalBits != 32 {
-		return fmt.Errorf("bus addr template: %s is illegal", c.BusAddrTemplate)
+	if totalBits != 32 && totalBits != 64 {
+		return fmt.Errorf("bus addr template: %s is illegal, total bit shoud be 32 or 64", c.BusAddrTemplate)
 	}
 
 	bitsSlice := make([]uint8, 4)
