@@ -7,6 +7,7 @@ import (
 	"path"
 	"path/filepath"
 	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/mitchellh/copystructure"
@@ -106,20 +107,38 @@ func (o *templateOptions) run(out io.Writer) (err error) {
 		// 覆盖 WorldId 与 ZoneId
 		if w, ok := optGlobalVals["world_id"]; ok {
 			var worldId uint64 = 0
-			if !reflect.ValueOf(w).CanUint() {
-				return fmt.Errorf("wrong type world_id")
+			worldRV := reflect.ValueOf(w)
+			if worldRV.CanUint() {
+				worldId = reflect.ValueOf(w).Uint()
+			} else if worldRV.CanInt() {
+				worldId = uint64(reflect.ValueOf(w).Int())
+			} else if reflect.TypeOf(w).Kind() == reflect.String {
+				worldId, err = strconv.ParseUint(reflect.ValueOf(w).String(), 10, 64)
+				if err != nil {
+					return fmt.Errorf("wrong type world_id: %s can not convert to uint64", reflect.TypeOf(w).Name())
+				}
+			} else {
+				return fmt.Errorf("wrong type world_id: %s can not convert to uint64", reflect.TypeOf(w).Name())
 			}
 
-			worldId = reflect.ValueOf(w).Uint()
 			nonCloudNativeCfg.Deploy.WorldID = worldId
 		}
 		if z, ok := optGlobalVals["zone_id"]; ok {
 			var zoneId uint64 = 0
-			if !reflect.ValueOf(z).CanUint() {
-				return fmt.Errorf("wrong type zone_id")
+			zoneRV := reflect.ValueOf(z)
+			if zoneRV.CanUint() {
+				zoneId = reflect.ValueOf(z).Uint()
+			} else if zoneRV.CanInt() {
+				zoneId = uint64(reflect.ValueOf(z).Int())
+			} else if reflect.TypeOf(z).Kind() == reflect.String {
+				zoneId, err = strconv.ParseUint(reflect.ValueOf(z).String(), 10, 64)
+				if err != nil {
+					return fmt.Errorf("wrong type zone_id: %s can not convert to uint64", reflect.TypeOf(z).Name())
+				}
+			} else {
+				return fmt.Errorf("wrong type zone_id: %s can not convert to uint64", reflect.TypeOf(z).Name())
 			}
 
-			zoneId = reflect.ValueOf(z).Uint()
 			nonCloudNativeCfg.Deploy.ZoneId = zoneId
 		}
 	}
