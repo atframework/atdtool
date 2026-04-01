@@ -129,7 +129,10 @@ func localIPv4() (net.IP, error) {
 			continue
 		}
 
-		ipV4s = append(ipV4s, ipnet.IP.To4())
+		ipV4 := ipnet.IP.To4()
+		if ipV4 != nil {
+			ipV4s = append(ipV4s, ipV4)
+		}
 	}
 
 	if len(ipV4s) == 0 {

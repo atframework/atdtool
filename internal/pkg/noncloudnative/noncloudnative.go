@@ -66,20 +66,6 @@ func LoadConfig(cfgPaths []string) (*Config, error) {
 	return config, nil
 }
 
-// UniqID returns proc uniq id.
-func (c *Config) UniqID(worldID, zoneID, funcID, insID uint64) uint64 {
-	var uniqID uint64
-	uniqID = 0
-	uniqID |= uint64(worldID)
-	uniqID = uniqID << uint32(c.Deploy.AddrPartBits["zone"])
-	uniqID |= uint64(zoneID)
-	uniqID = uniqID << uint32(c.Deploy.AddrPartBits["function"])
-	uniqID |= uint64(funcID)
-	uniqID = uniqID << uint32(c.Deploy.AddrPartBits["instance"])
-	uniqID |= uint64(insID)
-	return uniqID
-}
-
 // ZoneBase returns base of logic id
 func (c *Config) ZoneBase() uint64 {
 	var maxVal uint64 = 1 << uint32(c.Deploy.AddrPartBits["zone"])
@@ -102,7 +88,7 @@ func (c *Config) ToRenderValues(addr string) (values map[string]any, err error) 
 		return
 	}
 
-	worldID, zoneID, funcID, insID := addrs[0], addrs[1], addrs[2], addrs[3]
+	worldID, zoneID, insID := addrs[0], addrs[1], addrs[3]
 
 	values = make(map[string]any)
 	values["instance_id"] = insID
@@ -111,7 +97,6 @@ func (c *Config) ToRenderValues(addr string) (values map[string]any, err error) 
 	values["zone_id"] = zoneID
 	values["zone_base"] = c.ZoneBase()
 	values["logic_id"] = c.LogicID(worldID, zoneID)
-	values["uniq_id"] = c.UniqID(worldID, zoneID, funcID, insID)
 
 	values["bus_addr_template"] = c.Deploy.GetBriefBusAddrTemplate()
 	values["addr_total_bits"] = c.Deploy.GetAddrTotalBits()
