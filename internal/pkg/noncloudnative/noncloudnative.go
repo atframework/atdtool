@@ -66,22 +66,6 @@ func LoadConfig(cfgPaths []string) (*Config, error) {
 	return config, nil
 }
 
-// ZoneBase returns base of logic id
-func (c *Config) ZoneBase() uint64 {
-	var maxVal uint64 = 1 << uint32(c.Deploy.AddrPartBits["zone"])
-	var base uint64 = 1
-
-	for base <= maxVal {
-		base = base * 10
-	}
-	return base
-}
-
-// LogicID returns proc logic id.
-func (c *Config) LogicID(worldID, zoneID uint64) uint64 {
-	return worldID*c.ZoneBase() + zoneID
-}
-
 func (c *Config) ToRenderValues(addr string) (values map[string]any, err error) {
 	addrs, err := parseBusAddr(addr)
 	if err != nil {
@@ -92,18 +76,9 @@ func (c *Config) ToRenderValues(addr string) (values map[string]any, err error) 
 
 	values = make(map[string]any)
 	values["instance_id"] = insID
-	values["bus_addr"] = addr
 	values["world_id"] = worldID
 	values["zone_id"] = zoneID
-	values["zone_base"] = c.ZoneBase()
-	values["logic_id"] = c.LogicID(worldID, zoneID)
-
-	values["bus_addr_template"] = c.Deploy.GetBriefBusAddrTemplate()
-	values["addr_total_bits"] = c.Deploy.GetAddrTotalBits()
-	values["world_right_bits"] = c.Deploy.GetAddrWorldRightBits()
-	values["zone_right_bits"] = c.Deploy.GetAddrZoneRightBits()
-	values["func_right_bits"] = c.Deploy.GetAddrFuncRightBits()
-
+	values["bus_addr"] = addr
 	values["atdtool_running_platform"] = runtime.GOOS
 	return
 }
