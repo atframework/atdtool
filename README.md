@@ -33,14 +33,18 @@ atframework deploy tool , 用于atframework的部署工具。
 - Chart中的values只作用于当前进程
 
 ## 配置优先级说明
-
-- Global的优先级高于modules
-- Chart中的values的优先级要高于global
-- Values指定目录的优先级按照从左到右依次递增
-
+### 优先级从高到低
 ```bash
---values default,dev # 优先级关系 default < dev
+--values default,dev --set global.world_id=1
 ```
+- 命令行指定参数
+- dev路径 服务同名Yaml
+- default路径 服务同名Yaml
+- dev路径 global.yaml
+- default路径 global.yaml
+- Chart路径 values.yaml
+- dev路径 module
+- default路径 module
 
 ## Module使用说明
 
