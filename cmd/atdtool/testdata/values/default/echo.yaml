@@ -1,0 +1,4 @@
+shared: service
+service_only: service
+extra:
+  enabled: true

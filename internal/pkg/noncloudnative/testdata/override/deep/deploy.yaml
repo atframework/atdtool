@@ -1,0 +1,8 @@
+world_id: 9
+zone_id: 8
+proc_desc:
+  - chart_name: override
+    instance_type_id: "33"
+    world_instance: true
+    instance_count: 2
+    start_instance_id: 7

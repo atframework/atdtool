@@ -1,0 +1,8 @@
+type_name: basic
+shared: chart
+chart_only: chart
+cache:
+  enabled: true
+  shared: chart-cache
+  chart_only: chart-cache
+  from_chart: chart-cache

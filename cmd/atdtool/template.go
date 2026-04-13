@@ -107,39 +107,21 @@ func (o *templateOptions) run(out io.Writer) (err error) {
 		// 覆盖 WorldId 与 ZoneId
 		if w, ok := optGlobalVals["world_id"]; ok {
 			var worldId uint64 = 0
-			worldRV := reflect.ValueOf(w)
-			if worldRV.CanUint() {
-				worldId = reflect.ValueOf(w).Uint()
-			} else if worldRV.CanInt() {
-				worldId = uint64(reflect.ValueOf(w).Int())
-			} else if reflect.TypeOf(w).Kind() == reflect.String {
-				worldId, err = strconv.ParseUint(reflect.ValueOf(w).String(), 10, 64)
-				if err != nil {
-					return fmt.Errorf("wrong type world_id: %s can not convert to uint64", reflect.TypeOf(w).Name())
-				}
-			} else {
-				return fmt.Errorf("wrong type world_id: %s can not convert to uint64", reflect.TypeOf(w).Name())
+			worldId, err = convertToUint64Opt("world_id", w)
+			if err != nil {
+				return err
 			}
-
 			nonCloudNativeCfg.Deploy.WorldID = worldId
+			optGlobalVals["world_id"] = worldId
 		}
 		if z, ok := optGlobalVals["zone_id"]; ok {
 			var zoneId uint64 = 0
-			zoneRV := reflect.ValueOf(z)
-			if zoneRV.CanUint() {
-				zoneId = reflect.ValueOf(z).Uint()
-			} else if zoneRV.CanInt() {
-				zoneId = uint64(reflect.ValueOf(z).Int())
-			} else if reflect.TypeOf(z).Kind() == reflect.String {
-				zoneId, err = strconv.ParseUint(reflect.ValueOf(z).String(), 10, 64)
-				if err != nil {
-					return fmt.Errorf("wrong type zone_id: %s can not convert to uint64", reflect.TypeOf(z).Name())
-				}
-			} else {
-				return fmt.Errorf("wrong type zone_id: %s can not convert to uint64", reflect.TypeOf(z).Name())
+			zoneId, err = convertToUint64Opt("zone_id", z)
+			if err != nil {
+				return err
 			}
-
 			nonCloudNativeCfg.Deploy.ZoneId = zoneId
+			optGlobalVals["zone_id"] = zoneId
 		}
 	}
 
@@ -222,6 +204,32 @@ func renderTemplate(chartPath string, vals map[string]any, outPath string) error
 		suffix = fmt.Sprintf("_%s", addr)
 	}
 	return render(chrt, vals, outPath, suffix)
+}
+
+func convertToUint64Opt(name string, input any) (uint64, error) {
+	rv := reflect.ValueOf(input)
+	if rv.CanUint() {
+		return rv.Uint(), nil
+	}
+
+	if rv.CanInt() {
+		return uint64(rv.Int()), nil
+	}
+
+	if reflect.TypeOf(input).Kind() == reflect.String {
+		stringValue := strings.TrimSpace(rv.String())
+		stringValue = strings.Trim(stringValue, "\"")
+		stringValue = strings.Trim(stringValue, "'")
+
+		ret, err := strconv.ParseUint(stringValue, 10, 64)
+		if err != nil {
+			return 0, fmt.Errorf("wrong type %s: %s can not convert to uint64", name, reflect.TypeOf(input).Name())
+		}
+
+		return ret, nil
+	}
+
+	return 0, fmt.Errorf("wrong type %s: %s can not convert to uint64", name, reflect.TypeOf(input).Name())
 }
 
 // ProcStartSeq represents a proc start sequence
@@ -316,7 +324,12 @@ func render(chrt *chart.Chart, vals chartutil.Values, outPath, outSuffix string)
 		}
 
 		if _, err := f.WriteString(v); err != nil {
+			_ = f.Close()
 			return fmt.Errorf("write config file(%s): %v", outFile, err)
+		}
+
+		if err := f.Close(); err != nil {
+			return fmt.Errorf("close config file(%s): %v", outFile, err)
 		}
 	}
 	return nil

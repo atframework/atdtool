@@ -1,0 +1,7 @@
+shared: service-default
+service_only: service-default
+cache:
+  enabled: true
+  shared: service-cache-default
+  from_service: service-cache-default
+  only_service: only-service-default

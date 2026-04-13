@@ -1,0 +1,5 @@
+shared: service-dev
+service_only: service-dev
+cache:
+  shared: service-cache-dev
+  from_service: service-cache-dev

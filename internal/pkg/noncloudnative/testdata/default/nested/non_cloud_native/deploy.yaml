@@ -1,0 +1,8 @@
+world_id: 1
+zone_id: 2
+proc_desc:
+  - chart_name: echo
+    instance_type_id: "11"
+    world_instance: false
+    instance_count: 1
+    start_instance_id: 1

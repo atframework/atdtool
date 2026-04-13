@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -52,6 +53,10 @@ func randStr(n int) string {
 }
 
 func setupTestCase(t *testing.T, path string, size int) func(t *testing.T) {
+	if path == "" {
+		return func(t *testing.T) {}
+	}
+
 	if _, err := os.Stat(filepath.Dir(path)); os.IsNotExist(err) {
 		return func(t *testing.T) {}
 	}
@@ -82,6 +87,10 @@ func setupTestCase(t *testing.T, path string, size int) func(t *testing.T) {
 }
 
 func TestCompressFile(t *testing.T) {
+	tempDir := t.TempDir()
+	validPath := filepath.Join(tempDir, "testfile")
+	invalidPath := filepath.Join(tempDir, "nonexistence", "testfile")
+
 	tests := []struct {
 		name      string
 		path      string
@@ -90,23 +99,30 @@ func TestCompressFile(t *testing.T) {
 		out       io.Writer
 		wantErr   bool
 	}{
-		{"Valid file with ZSTD 1K", "/tmp/testfile", 1024, ZSTD, &bytes.Buffer{}, false},
-		{"Valid file with ZSTD 1M", "/tmp/testfile", 1024 * 1024, ZSTD, &bytes.Buffer{}, false},
-		{"Valid file with ZSTD 10M", "/tmp/testfile", 10 * 1024 * 1024, ZSTD, &bytes.Buffer{}, false},
-		{"Valid file with ZSTD 100M", "/tmp/testfile", 100 * 1024 * 1024, ZSTD, &bytes.Buffer{}, false},
-		{"Valid file with ZSTD 1G", "/tmp/testfile", 1024 * 1024 * 1024, ZSTD, &bytes.Buffer{}, false},
-		{"Valid file with unsupported algo", "/tmp/testfile", 0, "unknown", &bytes.Buffer{}, true},
-		{"Invalid file path", "/nonexistence/testfile", 0, ZSTD, &bytes.Buffer{}, true},
-		{"Empty file path", "/nonexistence/testfile", 0, ZSTD, &bytes.Buffer{}, true},
-		{"Invalid writer with ZSTD", "/tmp/testfile", 0, ZSTD, &errorWriter{}, true},
+		{"Valid file with ZSTD 1K", validPath, 1024, ZSTD, &bytes.Buffer{}, false},
+		{"Valid file with ZSTD 1M", validPath, 1024 * 1024, ZSTD, &bytes.Buffer{}, false},
+		{"Valid file with ZSTD 10M", validPath, 10 * 1024 * 1024, ZSTD, &bytes.Buffer{}, false},
+		{"Valid file with ZSTD 100M", validPath, 100 * 1024 * 1024, ZSTD, &bytes.Buffer{}, false},
+		{"Valid file with ZSTD 1G", validPath, 1024 * 1024 * 1024, ZSTD, &bytes.Buffer{}, false},
+		{"Valid file with unsupported algo", validPath, 0, "unknown", &bytes.Buffer{}, true},
+		{"Invalid file path", invalidPath, 0, ZSTD, &bytes.Buffer{}, true},
+		{"Empty file path", "", 0, ZSTD, &bytes.Buffer{}, true},
+		{"Invalid writer with ZSTD", validPath, 1024, ZSTD, &errorWriter{}, true},
 	}
 
-	assert := assert.New(t)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			teardown := setupTestCase(t, tt.path, tt.size)
+			assert := assert.New(t)
+			path := tt.path
+			if path == validPath {
+				path = filepath.Join(tempDir, strings.ReplaceAll(tt.name, " ", "_"))
+			} else if path == invalidPath {
+				path = filepath.Join(tempDir, "nonexistence", strings.ReplaceAll(tt.name, " ", "_"))
+			}
+
+			teardown := setupTestCase(t, path, tt.size)
 			defer teardown(t)
-			err := CompressFile(tt.path, NewDefaultCompressOption(tt.algorithm), tt.out)
+			err := CompressFile(path, NewDefaultCompressOption(tt.algorithm), tt.out)
 			if tt.wantErr {
 				assert.NotNil(err)
 			} else {

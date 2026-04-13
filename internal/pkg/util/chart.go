@@ -124,6 +124,7 @@ func mergeEnabledModuleValues(valuesPaths []string, dst map[string]any) (map[str
 			if flag, ok := val["enabled"].(bool); ok {
 				// module disabled
 				if !flag {
+					delete(moduleVals, k)
 					continue
 				}
 				moduleEnabled = true

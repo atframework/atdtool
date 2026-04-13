@@ -1,0 +1,4 @@
+enabled: true
+shared: module-cache-default
+from_module: module-cache-default
+only_module: only-module-default

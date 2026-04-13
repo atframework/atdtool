@@ -13,157 +13,154 @@ atframework deploy tool , 用于atframework的部署工具。
 ![GitHub forks](https://img.shields.io/github/forks/atframework/atdtool)
 ![GitHub Repo stars](https://img.shields.io/github/stars/atframework/atdtool)
 
+## 快速开始
 
-## 配置工具atdtool使用说明
+详细命令说明请参考 `atdtool --help`，也可以直接查看下方文档索引。
 
-详细使用说明请参考 `atdtool --help` 命令
+| 命令                   | 说明                                                                 |
+| :--------------------- | :------------------------------------------------------------------- |
+| `atdtool version`      | 查看 `atdtool` 版本信息                                              |
+| `atdtool merge-values` | 针对**单个 chart** 合并 `values.yaml`、配置组目录和命令行覆盖项      |
+| `atdtool template`     | 针对**实例清单** 渲染配置模板，输出每个实例对应的配置与脚本          |
+| `atdtool guid`         | 生成唯一 ID（雪花算法）                                              |
+| `atdtool watch`        | 监听文件变化并执行相关命令                                           |
 
-| 命令                   | 说明                     |
-| :--------------------- | :----------------------- |
-| `atdtool version`      | 查看atdtool信息          |
-| `atdtool template`     | 渲染配置模板             |
-| `atdtool merge-values` | 合并Values               |
-| `atdtool guid`         | 生成唯一ID（雪花算法）   |
-| `atdtool watch`        | 监听文件变化执行相关命令 |
+## 文档索引
 
-## 配置作用域说明
+- 使用说明
+  - [`docs/usage/merge-values.md`](docs/usage/merge-values.md)
+  - [`docs/usage/template.md`](docs/usage/template.md)
+  - [`docs/usage/values-and-overrides.md`](docs/usage/values-and-overrides.md)
+  - [`docs/usage/modules.md`](docs/usage/modules.md)
+- 模板运行时参考
+  - [`docs/reference/template-runtime.md`](docs/reference/template-runtime.md)
+- 结构文档
+  - [`docs/structure/project-structure.md`](docs/structure/project-structure.md)
+  - [`docs/structure/chart-values-layout.md`](docs/structure/chart-values-layout.md)
+  - [`docs/structure/render-flow.md`](docs/structure/render-flow.md)
 
-- Global配置作用于所有进程
-- Modules中的配置可以被所有进程所引用
-- Chart中的values只作用于当前进程
+## 配置来源与作用域
 
-## 配置优先级说明
-### 优先级从高到低
+`atdtool` 当前会从以下来源构建最终 `.Values`：
+
+1. chart 自带的 `values.yaml`
+2. 配置组目录中的 `global.yaml`
+3. 配置组目录中的 **charts 同名 yaml**（优先取 chart 的 `type_name`，其次 `func_name`，最后是 chart 目录名）
+4. 配置组目录中的 `modules/*.yaml`
+5. 命令行 `--set`
+6. `template` 模式下额外注入的运行时变量（如 `world_id`、`zone_id`、`instance_id`、`bus_addr`）
+
+作用域约定如下：
+
+- `global.yaml`：为所有进程 / chart 提供公共默认值
+- `<chart-name>.yaml`：只作用于对应 chart（或对应 `type_name` / `func_name`）
+- `modules/*.yaml`：以模块名为 key 注入，例如 `modules/logging.yaml` 会合并到 `.Values.logging`
+- chart 自带 `values.yaml`：当前 chart 的默认值
+- `--set`：命令行临时覆盖
+
+## 同 key 覆盖关系
+
+对于同一个 key，当前代码的真实优先级从高到低为：
+
+1. `--set`
+2. `template` 模式下按实例注入的运行时值（例如 `world_id`、`zone_id`、`instance_id`、`bus_addr`，以及实例 `type_id`）
+3. 后出现配置组路径中的 charts 同名 yaml
+4. 先出现配置组路径中的 charts 同名 yaml
+5. chart 自带 `values.yaml`
+6. 后出现配置组路径中的 `global.yaml`
+7. 先出现配置组路径中的 `global.yaml`
+8. 后出现配置组路径中的**已启用**模块配置
+9. 先出现配置组路径中的**已启用**模块配置
+
+例如：
+
 ```bash
---values default,dev --set global.world_id=1
+atdtool merge-values ./charts/example -p ./values/default,./values/dev -s log_level=DEBUG
 ```
-- 命令行指定参数
-- dev路径 服务同名Yaml
-- default路径 服务同名Yaml
-- dev路径 global.yaml
-- default路径 global.yaml
-- Chart路径 values.yaml
-- dev路径 module
-- default路径 module
 
-## Module使用说明
+需要特别注意两点：
 
-- 模块配置需要放到modules目录
-- 模块需要指定是否默认启用
+- `global.yaml` 并不会覆盖 chart 自带 `values.yaml` 的同名 key，它更适合作为“公共默认层”。
+- `modules/*.yaml` 更偏向“按需补齐层”：如果更高优先级来源已经写入同名 key，则模块不会再覆盖它。
 
-```bash
-# 通用模块可以默认启用
-# 通用模块示例
-# modules/etcd.yaml
+## Modules 使用约定
+
+- 模块配置需要放在 `modules` 目录下
+- 模块文件内容会自动挂到 `.Values.<模块名>` 下
+- 模块是否生效，取决于：
+  - 更高优先级来源里是否显式设置 `<module>.enabled`
+  - 模块文件自身是否声明 `enabled: true`
+
+例如：
+
+```yaml
+# values/default/modules/etcd.yaml
 enabled: true
+endpoints:
+  - 127.0.0.1:2379
 ```
 
-- 服务启用和关闭模块方式
-
-```bash
-# lobbysvr关闭etcd模块示例
-# charts/lobbysvr/etcd.yaml
-etcd:
+```yaml
+# values/dev/example.yaml
+logging:
   enabled: false
 ```
 
-- 模块配置模板时需要加上保护（服务不启用某个模块的情况下不会加载对应的配置）
+模板引用模块时需要做好保护：
 
-```bash
-# 模板引用模块保护示例
-# libapp/templates/_atapp.logic.yaml.tpl
+```gotemplate
 {{- if .Values.etcd }}
 ...
 {{- end }}
 ```
 
-## 配置覆盖说明
+更多细节见 [`docs/usage/modules.md`](docs/usage/modules.md)。
 
-- 配置修改只需指定待覆盖的配置项（切勿再拷贝一份完整的配置）
+## 覆盖配置的写法建议
 
-```bash
-# 源配置
-cache_cfg:
-  watcher:
-    heartbeat_interval: 15m # 自动更新watcher的心跳间隔
-    expired_timeout: 32m # 订阅自动清理时间，由于有些模块是按分钟的精度。最好大于 watcher.heartbeat_interval 的2倍
-    check_interval: 18m # Watcher的检查间隔
-    max_number: 2000000 #
-    max_recycle_count_per_tick: 1000 # 每个tick最大回收缓存数量
-  data:
-    cache_data_expired_timeout: 60m # 如果未主动标记过期，缓存的被动刷新周期
-    cache_expired_timeout: 35m # 缓存对象长时间未访问自动清理时间，最好大于 watcher.heartbeat_interval 的2倍
-    cache_check_interval: 10m # 缓存对象的生命周期检查间隔
-    cache_fallback_expired_timeout: 5m # 缓存服务未开启时本地模块的缓存过期时间
-    max_recycle_count_per_tick: 100 # 每个tick最大回收缓存数量
-    max_user_cache_number: 200000 # 最大玩家数据缓存数量，超出后会强制回收最老的数据块
-    gc_user_cache_number: 100000 # 开始主动执行GC的玩家缓存数量
+- 只覆盖需要修改的 key，不要整段复制完整配置。
+- 修改模块内部配置时，**不要再额外套一层模块名**。
+- 修改进程自身配置时，**不要再额外套一层进程名**。
 
-# 正确覆盖示例
-cache_cfg:
-   watcher:
-     check_interval: 18m
-```
+示例：
 
-- 修改modules相关配置Key无需再加上对应的模块名称
-
-```bash
-# 错误覆盖示例
-# ds.yaml
+```yaml
+# 错误示例：重复包了一层模块名
 ds:
   pre_alloc_ds_count: 1
   disabled_pre_alloc_alias: []
+```
 
-# 正确覆盖示例
-# ds.yaml
+```yaml
+# 正确示例：直接写模块内部 key
 pre_alloc_ds_count: 1
 disabled_pre_alloc_alias: []
 ```
 
-- 修改对应进程配置Key无需再加上对应的进程名
-  
-```bash
-# 错误示例
-# gamesvr.yaml
-gamesvr:
-  etcd:
-    enable_sdk: false
+## `merge-values` 与 `template` 的区别
 
-# 正确示例
-# gamesvr.yaml
-etcd:
-  enable_sdk: false
-```
+- `merge-values`
+  - 处理对象是**单个 chart**
+  - 输出合并后的 `values.yaml`
+  - 适合检查某个 chart 在多组 values 下的最终取值
+- `template`
+  - 处理对象是**chart 根目录**（例如 `./charts`）
+  - 依赖 `values` 路径中的 `non_cloud_native/deploy.yaml`
+  - 按实例展开并输出每个实例的配置文件和脚本
+  - 当前实现中 `-o/--output` 为必填项
 
-## 配置生成
+更多细节见：
 
-1.1. 配置生成命令
+- [`docs/usage/merge-values.md`](docs/usage/merge-values.md)
+- [`docs/usage/template.md`](docs/usage/template.md)
 
-```bash
-Usage:
-  atdtool template [CHART] [flags]
+## 模板运行时与 Helm 原生能力
 
-Flags:
-      --devel             enable develop mode
-  -h, --help              help for template
-  -o, --output string     specify templates rendered result save path
-  -s, --set stringArray   set values on the command line (can specify multiple or separate values with commas: key1=val1,key2=val2)
-      --non-cloud-native  enable non cloud-native mode
-  -p, --values strings    set values path on the command line (can specify multiple paths with commas:path1,path2)
-```
+`atdtool` 在 Helm 模板能力之上，额外注入了部分运行时值；chart 侧的命名模板与输出模板约定见参考文档。
 
-1.2. Flag详细说明
-
-- 通过--values可以指定配置源加载路径
-- 通过--set可以指定单个配置项的值
-
-```bash
-# 替换某一个结构成员值
---set battlesvr.ds.default.max_fps=0
-
-# 指定数组中某个元素值
---set battlesvr.ds.default.log_server_list[0]="11.152.245.181:7788"
-
-# 指定整个数组值
---set battlesvr.ds.default.pre_alloc_ds_maps="{1,5}"
-```
+- `atdtool` 额外变量、模板上下文边界、chart 侧命名模板与输出模板约定：见 [`docs/reference/template-runtime.md`](docs/reference/template-runtime.md)
+- Helm 内置对象：<https://helm.sh/docs/chart_template_guide/builtin_objects/>
+- Helm 变量：<https://helm.sh/docs/chart_template_guide/variables/>
+- Helm 函数与管道：<https://helm.sh/docs/chart_template_guide/functions_and_pipelines/>
+- Helm 函数清单：<https://helm.sh/docs/chart_template_guide/function_list/>
+- Helm 命名模板：<https://helm.sh/docs/chart_template_guide/named_templates/>

@@ -1,0 +1,5 @@
+type_name: echo
+proc_name: echod
+shared: chart
+extra:
+  enabled: true
