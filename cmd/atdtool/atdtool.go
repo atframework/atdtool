@@ -48,7 +48,6 @@ func newRootCmd(out io.Writer, args []string) (*cobra.Command, error) {
 		newVersionCmd(out),
 		newTemplateCmd(out),
 		newMergeValuesCmd(out),
-		newGUIDCmd(out),
 		newWatchCmd(out),
 		newExecCmd(out),
 	)
