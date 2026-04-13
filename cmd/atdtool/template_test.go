@@ -138,6 +138,8 @@ func TestConvertToUint64Opt(t *testing.T) {
 		{name: "string", input: "9", want: 9},
 		{name: "quoted string", input: `"10"`, want: 10},
 		{name: "invalid", input: "abc", wantError: true},
+		{name: "float64", input: float64(3.14), wantError: true},
+		{name: "bool", input: true, wantError: true},
 	}
 
 	for _, tt := range tests {
@@ -168,4 +170,60 @@ func TestTemplateOptionsRunRequiresOutputPath(t *testing.T) {
 	err := o.run(&bytes.Buffer{})
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "outPath not found")
+}
+
+func TestTemplateOptionsRunGlobalOverridesInstanceSet(t *testing.T) {
+	// Current code: global.* is applied after <instance>.*, so global wins for same key.
+	outDir := t.TempDir()
+	o := &templateOptions{
+		chartPath: fixturePath("charts"),
+		outPath:   outDir,
+		valOpts: values.Options{
+			Paths:  []string{fixturePath("values", "default")},
+			Values: []string{"echo.shared=instance-val", "global.shared=global-val"},
+		},
+	}
+
+	err := o.run(&bytes.Buffer{})
+	if !assert.NoError(t, err) {
+		return
+	}
+
+	cfgPath := filepath.Join(outDir, "echo", "cfg", "echo_1.2.42.3.yaml")
+	data, err := os.ReadFile(cfgPath)
+	if !assert.NoError(t, err) {
+		return
+	}
+	text := string(data)
+
+	// global.shared is applied after echo.shared, so global wins.
+	assert.Contains(t, text, "shared: global-val")
+}
+
+func TestTemplateOptionsRunTypeIdFromDeploy(t *testing.T) {
+	// type_id is always set from deploy.yaml Instance.TypeId, not overridable via --set.
+	outDir := t.TempDir()
+	o := &templateOptions{
+		chartPath: fixturePath("charts"),
+		outPath:   outDir,
+		valOpts: values.Options{
+			Paths:  []string{fixturePath("values", "default")},
+			Values: []string{"global.type_id=999"},
+		},
+	}
+
+	err := o.run(&bytes.Buffer{})
+	if !assert.NoError(t, err) {
+		return
+	}
+
+	cfgPath := filepath.Join(outDir, "echo", "cfg", "echo_1.2.42.3.yaml")
+	data, err := os.ReadFile(cfgPath)
+	if !assert.NoError(t, err) {
+		return
+	}
+	text := string(data)
+
+	// type_id is unconditionally set to Instance.TypeId (42) after copying optVals.
+	assert.Contains(t, text, "type_id: 42")
 }

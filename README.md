@@ -62,15 +62,16 @@ atframework deploy tool , 用于atframework的部署工具。
 
 对于同一个 key，当前代码的真实优先级从高到低为：
 
-1. `--set`
-2. `template` 模式下按实例注入的运行时值（例如 `world_id`、`zone_id`、`instance_id`、`bus_addr`，以及实例 `type_id`）
-3. 后出现配置组路径中的 charts 同名 yaml
-4. 先出现配置组路径中的 charts 同名 yaml
-5. chart 自带 `values.yaml`
-6. 后出现配置组路径中的 `global.yaml`
-7. 先出现配置组路径中的 `global.yaml`
-8. 后出现配置组路径中的**已启用**模块配置
-9. 先出现配置组路径中的**已启用**模块配置
+1. `template` 模式下无条件注入的 `type_id`（来自 `deploy.yaml`，不可被 `--set` 覆盖）
+2. `--set`
+3. `template` 模式下按实例注入的运行时值（`world_id`、`zone_id`、`instance_id`、`bus_addr`、`atdtool_running_platform`）
+4. 后出现配置组路径中的 charts 同名 yaml
+5. 先出现配置组路径中的 charts 同名 yaml
+6. chart 自带 `values.yaml`
+7. 后出现配置组路径中的 `global.yaml`
+8. 先出现配置组路径中的 `global.yaml`
+9. 后出现配置组路径中的**已启用**模块配置
+10. 先出现配置组路径中的**已启用**模块配置
 
 例如：
 
@@ -78,10 +79,11 @@ atframework deploy tool , 用于atframework的部署工具。
 atdtool merge-values ./charts/example -p ./values/default,./values/dev -s log_level=DEBUG
 ```
 
-需要特别注意两点：
+需要特别注意：
 
 - `global.yaml` 并不会覆盖 chart 自带 `values.yaml` 的同名 key，它更适合作为“公共默认层”。
 - `modules/*.yaml` 更偏向“按需补齐层”：如果更高优先级来源已经写入同名 key，则模块不会再覆盖它。
+- `type_id` 由 `deploy.yaml` 中的 `instance_type_id` 无条件注入，`--set` 无法覆盖。而 `world_id`、`zone_id` 等运行时值可通过 `--set global.world_id` 等覆盖。
 
 ## Modules 使用约定
 

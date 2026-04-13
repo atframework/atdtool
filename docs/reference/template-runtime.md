@@ -40,11 +40,12 @@ Helm 官方文档入口：
 | `.Values.instance_id` | `deploy.yaml` 展开后的实例号 | 当前实例 ID |
 | `.Values.bus_addr` | 由 world/zone/type/instance 组合生成 | 当前实例 bus 地址 |
 | `.Values.atdtool_running_platform` | 运行时 `runtime.GOOS` | 当前运行平台 |
-| `.Values.type_id` | `deploy.yaml` 中的 `instance_type_id` | 当前实例类型 ID |
+| `.Values.type_id` | `deploy.yaml` 中的 `instance_type_id` | 当前实例类型 ID（无条件注入，不可被 `--set` 覆盖） |
 
 补充说明：
 
-- `global.*` 的命令行参数在 `template` 模式下会被扁平化到实例顶层 values 中
+- `type_id` 由 `deploy.yaml` 中的 `instance_type_id` 无条件设置，优先级高于 `--set`。其他运行时值（`world_id`、`zone_id` 等）可通过 `--set global.*` 覆盖
+- `global.*` 的命令行参数在 `template` 模式下会被扁平化到实例顶层 values 中，且 `--set global.*` 覆盖 `--set <实例名>.*` 的同名 key
 - `<实例名>.*` 的命令行参数只作用于对应实例
 - chart 自带的 `type_name` / `func_name` 不属于额外运行时值，但会影响服务级同名 yaml 的文件名解析
 

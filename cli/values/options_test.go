@@ -107,4 +107,16 @@ func TestOptionsMergePaths(t *testing.T) {
 		assert.Empty(t, paths)
 		assert.Contains(t, err.Error(), "is not exist")
 	})
+
+	t.Run("return all errors when multiple paths missing", func(t *testing.T) {
+		missing := &Options{Paths: []string{
+			filepath.Join(baseDir, "missing-a"),
+			filepath.Join(baseDir, "missing-b"),
+		}}
+		paths, err := missing.MergePaths()
+		assert.Error(t, err)
+		assert.Empty(t, paths)
+		assert.Contains(t, err.Error(), "missing-a")
+		assert.Contains(t, err.Error(), "missing-b")
+	})
 }

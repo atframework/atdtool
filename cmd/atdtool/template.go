@@ -232,28 +232,10 @@ func convertToUint64Opt(name string, input any) (uint64, error) {
 	return 0, fmt.Errorf("wrong type %s: %s can not convert to uint64", name, reflect.TypeOf(input).Name())
 }
 
-// ProcStartSeq represents a proc start sequence
-type ProcStartSeq struct {
-	Name string
-	Seq  uint64
-}
-
-// ProcStartSeqSlice alias for proc start sequence slice
-type ProcStartSeqSlice []ProcStartSeq
-
-func (s ProcStartSeqSlice) Len() int      { return len(s) }
-func (s ProcStartSeqSlice) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
-func (s ProcStartSeqSlice) Less(i, j int) bool {
-	if s[i].Seq == s[j].Seq {
-		return s[i].Name < s[j].Name
-	}
-	return s[i].Seq < s[j].Seq
-}
-
 func allConfigTemplates(chrt *chart.Chart) {
 	chrt.Templates = chrt.Templates[:0]
 	for _, f := range chrt.Files {
-		if strings.HasSuffix(f.Name, ".tpl") || strings.HasSuffix(f.Name, "*.template") {
+		if strings.HasSuffix(f.Name, ".tpl") || strings.HasSuffix(f.Name, ".template") {
 			chrt.Templates = append(chrt.Templates, f)
 		}
 	}

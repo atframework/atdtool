@@ -40,6 +40,9 @@ func TestMergeChartValuesPrecedenceAndModules(t *testing.T) {
 	assert.Equal(t, "service-dev", got["service_only"])
 	assert.NotContains(t, got, "disabled")
 
+	// Gap A: chart default wins over global.yaml for the same key
+	assert.Equal(t, "chart-value", got["chart_global_overlap"])
+
 	cache := asMap(t, got["cache"])
 	assert.Equal(t, true, cache["enabled"])
 	assert.Equal(t, "service-cache-dev", cache["shared"])
@@ -51,6 +54,9 @@ func TestMergeChartValuesPrecedenceAndModules(t *testing.T) {
 	assert.Equal(t, "only-service-default", cache["only_service"])
 	assert.Equal(t, "module-cache-dev", cache["from_module"])
 	assert.Equal(t, "only-module-dev", cache["only_module"])
+
+	// Gap E: chart default wins over global.yaml inside a module key
+	assert.Equal(t, "chart-cache-value", cache["chart_global_overlap"])
 }
 
 func TestMergeChartValuesUsesTypeNameForServiceFile(t *testing.T) {

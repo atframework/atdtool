@@ -1,6 +1,8 @@
 shared: global-default
 global_only: global-default
+chart_global_overlap: global-value
 cache:
   shared: global-cache-default
   from_global: global-cache-default
   only_global: only-global-default
+  chart_global_overlap: global-cache-value

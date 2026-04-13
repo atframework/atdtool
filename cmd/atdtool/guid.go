@@ -60,11 +60,15 @@ func newGenGUIDCmd(out io.Writer) *cobra.Command {
 	}
 
 	f := cmd.Flags()
-	f.StringVar(&o.algorithm, "algorithm", "", "specify generate gloabl unique id algorithm")
+	f.StringVar(&o.algorithm, "algorithm", "", "specify global unique id algorithm")
 	return cmd
 }
 
 func (o *genGUIDOptions) run(out io.Writer) error {
+	if o.algorithm != "" && o.algorithm != "snowflake" {
+		return fmt.Errorf("unsupported algorithm: %s", o.algorithm)
+	}
+
 	s := snowflake.NewSnowFlake(nil)
 	val, err := s.NextVal()
 	if err != nil {

@@ -1,6 +1,7 @@
 package values
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -29,7 +30,7 @@ func (opts *Options) MergeValues() (map[string]interface{}, error) {
 
 func (opts *Options) MergePaths() ([]string, error) {
 	paths := make([]string, 0)
-	var lastError error
+	var errs []error
 	for _, v := range opts.Paths {
 		var path string = v
 		var err error
@@ -40,24 +41,24 @@ func (opts *Options) MergePaths() ([]string, error) {
 				var home string
 				home, err = os.UserHomeDir()
 				if err != nil {
-					lastError = err
+					errs = append(errs, err)
 					continue
 				}
 				path = filepath.Join(home, path)
 			} else {
 				path, err = filepath.Abs(v)
 				if err != nil {
-					lastError = err
+					errs = append(errs, err)
 					continue
 				}
 			}
 		}
 
 		if !util.PathExist(path) {
-			lastError = fmt.Errorf("target path(%s) is not exist", path)
+			errs = append(errs, fmt.Errorf("target path(%s) is not exist", path))
 			continue
 		}
 		paths = append(paths, path)
 	}
-	return paths, lastError
+	return paths, errors.Join(errs...)
 }

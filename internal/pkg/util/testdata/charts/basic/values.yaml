@@ -1,8 +1,10 @@
 type_name: basic
 shared: chart
 chart_only: chart
+chart_global_overlap: chart-value
 cache:
   enabled: true
   shared: chart-cache
   chart_only: chart-cache
   from_chart: chart-cache
+  chart_global_overlap: chart-cache-value
