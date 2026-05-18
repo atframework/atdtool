@@ -143,4 +143,24 @@ func TestMergeChartValuesWithNonCloudNativeValues(t *testing.T) {
 	assert.Equal(t, uint64(6), got["instance_id"])
 	assert.Equal(t, "3.4.5.6", got["bus_addr"])
 	assert.Equal(t, runtime.GOOS, got["atdtool_running_platform"])
+	assert.Equal(t, defaultAtappExternalIP, got["atappExternalIP"])
+}
+
+func TestMergeChartValuesWithNonCloudNativeValuesKeepsExplicitAtappExternalIP(t *testing.T) {
+	got, err := MergeChartValues(
+		fixturePath("charts", "basic"),
+		[]string{fixturePath("values", "default")},
+		map[string]any{
+			"atappExternalIP": "10.20.30.40",
+		},
+		&noncloudnative.RenderValue{
+			BusAddr: "3.4.5.6",
+			Config:  &noncloudnative.Config{},
+		},
+	)
+	if !assert.NoError(t, err) {
+		return
+	}
+
+	assert.Equal(t, "10.20.30.40", got["atappExternalIP"])
 }

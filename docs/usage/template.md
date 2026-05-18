@@ -65,6 +65,7 @@
 | `.Values.instance_id` | 当前实例号 |
 | `.Values.bus_addr` | 当前实例的 bus 地址 |
 | `.Values.atdtool_running_platform` | 当前运行平台，例如 `windows` / `linux` |
+| `.Values.atappExternalIP` | 外部 IP 缺省值，默认 `127.0.0.1`，如果其他来源已定义则保留原值 |
 | `.Values.type_id` | 当前实例的 `instance_type_id` |
 
 更完整的模板接口清单见：

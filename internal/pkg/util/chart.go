@@ -14,6 +14,8 @@ import (
 	yamlparser "github.com/atframework/atdtool/pkg/confparser/yaml"
 )
 
+const defaultAtappExternalIP = "127.0.0.1"
+
 // MergeChartValues merges multiple sources of Helm chart values into a single values map
 func MergeChartValues(chartPath string, valuesPaths []string, optVals map[string]any, nonCloudNativeVal *noncloudnative.RenderValue) (values map[string]any, err error) {
 	var chrt *chart.Chart
@@ -78,6 +80,15 @@ func MergeChartValues(chartPath string, valuesPaths []string, optVals map[string
 	}
 
 	values, err = mergeEnabledModuleValues(valuesPaths, values)
+	if err != nil {
+		return
+	}
+
+	if nonCloudNativeVal != nil {
+		if _, ok := values["atappExternalIP"]; !ok {
+			values["atappExternalIP"] = defaultAtappExternalIP
+		}
+	}
 	return
 }
 

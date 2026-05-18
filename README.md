@@ -48,7 +48,7 @@ atframework deploy tool , 用于atframework的部署工具。
 3. 配置组目录中的 **charts 同名 yaml**（优先取 chart 的 `type_name`，其次 `func_name`，最后是 chart 目录名）
 4. 配置组目录中的 `modules/*.yaml`
 5. 命令行 `--set`
-6. `template` 模式下额外注入的运行时变量（如 `world_id`、`zone_id`、`instance_id`、`bus_addr`）
+6. `template` 模式下额外注入或补齐的运行时变量（如 `world_id`、`zone_id`、`instance_id`、`bus_addr`、`atappExternalIP`）
 
 作用域约定如下：
 
@@ -84,6 +84,7 @@ atdtool merge-values ./charts/example -p ./values/default,./values/dev -s log_le
 - `global.yaml` 并不会覆盖 chart 自带 `values.yaml` 的同名 key，它更适合作为“公共默认层”。
 - `modules/*.yaml` 更偏向“按需补齐层”：如果更高优先级来源已经写入同名 key，则模块不会再覆盖它。
 - `type_id` 由 `deploy.yaml` 中的 `instance_type_id` 无条件注入，`--set` 无法覆盖。而 `world_id`、`zone_id` 等运行时值可通过 `--set global.world_id` 等覆盖。
+- `atappExternalIP` 会在 `template` 模式下按默认值 `127.0.0.1` 补齐，仅当最终 `.Values` 中尚未定义该 key 时才注入。
 
 ## Modules 使用约定
 

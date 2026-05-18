@@ -6,6 +6,7 @@ zone_id: {{ .Values.zone_id }}
 instance_id: {{ .Values.instance_id }}
 bus_addr: {{ .Values.bus_addr }}
 shared: {{ .Values.shared }}
+atapp_external_ip: {{ .Values.atappExternalIP }}
 service_only: {{ .Values.service_only }}
 platform: {{ .Values.atdtool_running_platform }}
 extra_enabled: {{ .Values.extra.enabled }}

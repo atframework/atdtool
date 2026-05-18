@@ -62,6 +62,7 @@ func TestTemplateOptionsRunRendersPerInstanceOutputs(t *testing.T) {
 	assert.Contains(t, cfg1Text, "zone_id: 2")
 	assert.Contains(t, cfg1Text, "instance_id: 3")
 	assert.Contains(t, cfg1Text, "bus_addr: 1.2.42.3")
+	assert.Contains(t, cfg1Text, "atapp_external_ip: 127.0.0.1")
 	assert.Contains(t, cfg1Text, "shared: service")
 	assert.Contains(t, cfg1Text, "service_only: service")
 	assert.Contains(t, cfg1Text, "extra_enabled: true")
@@ -226,4 +227,29 @@ func TestTemplateOptionsRunTypeIdFromDeploy(t *testing.T) {
 
 	// type_id is unconditionally set to Instance.TypeId (42) after copying optVals.
 	assert.Contains(t, text, "type_id: 42")
+}
+
+func TestTemplateOptionsRunAllowsOverridingAtappExternalIP(t *testing.T) {
+	outDir := t.TempDir()
+	o := &templateOptions{
+		chartPath: fixturePath("charts"),
+		outPath:   outDir,
+		valOpts: values.Options{
+			Paths:  []string{fixturePath("values", "default")},
+			Values: []string{"global.atappExternalIP=10.20.30.40"},
+		},
+	}
+
+	err := o.run(&bytes.Buffer{})
+	if !assert.NoError(t, err) {
+		return
+	}
+
+	cfgPath := filepath.Join(outDir, "echo", "cfg", "echo_1.2.42.3.yaml")
+	data, err := os.ReadFile(cfgPath)
+	if !assert.NoError(t, err) {
+		return
+	}
+
+	assert.Contains(t, string(data), "atapp_external_ip: 10.20.30.40")
 }
