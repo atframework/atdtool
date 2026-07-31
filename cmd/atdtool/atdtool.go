@@ -29,6 +29,7 @@ func ToolName() string {
 func addValueOptionsFlags(f *pflag.FlagSet, v *values.Options) {
 	f.StringSliceVarP(&v.Paths, "values", "p", []string{}, "set values path on the command line (can specify multiple paths with commas:path1,path2)")
 	f.StringArrayVarP(&v.Values, "set", "s", []string{}, "set values on the command line (can specify multiple or separate values with commas: key1=val1,key2=val2)")
+	f.StringVarP(&v.Mode, "mode", "m", "", "set the mode on the command line")
 }
 
 func newRootCmd(out io.Writer, args []string) (*cobra.Command, error) {

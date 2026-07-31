@@ -79,22 +79,7 @@ func newTemplateCmd(out io.Writer) *cobra.Command {
 	return cmd
 }
 
-func (o *templateOptions) run(out io.Writer) (err error) {
-	var (
-		valuePaths []string
-		optVals    map[string]any
-	)
-
-	valuePaths, err = o.valOpts.MergePaths()
-	if err != nil {
-		return
-	}
-
-	optVals, err = o.valOpts.MergeValues()
-	if err != nil {
-		return
-	}
-
+func (o *templateOptions) runNonCloudNative(out io.Writer, valuePaths []string, optVals map[string]any) (err error) {
 	nonCloudNativeCfg, err := noncloudnative.LoadConfig(valuePaths)
 	if err != nil {
 		return fmt.Errorf("load noncloudnative configuration: %v", err)
@@ -186,8 +171,57 @@ func (o *templateOptions) run(out io.Writer) (err error) {
 			fmt.Fprintf(out, "create('%s', '%s') configuration success\n", Instance.Name, busAddr)
 		}
 	}
-
 	return nil
+}
+
+func (o *templateOptions) runNonDeploy(out io.Writer, valuePaths []string, optVals map[string]any) (err error) {
+	copyOptVals := make(map[string]any)
+	if val, ok := optVals["global"]; ok {
+		if vm, ok := val.(map[string]interface{}); ok {
+			for k, v := range vm {
+				copyVal, err := copystructure.Copy(v)
+				if err != nil {
+					return err
+				}
+				copyOptVals[k] = copyVal
+			}
+		}
+	}
+
+	vals, err := util.MergeChartValues(filepath.Join(o.chartPath), valuePaths, copyOptVals, nil)
+	if err != nil {
+		return err
+	}
+
+	if err := renderTemplate(filepath.Join(o.chartPath), vals, filepath.Join(o.outPath)); err != nil {
+		return err
+	}
+	fmt.Fprintf(out, "create('%s', '%s') configuration success\n", o.chartPath, "")
+	return nil
+}
+
+func (o *templateOptions) run(out io.Writer) (err error) {
+	var (
+		valuePaths []string
+		optVals    map[string]any
+	)
+
+	valuePaths, err = o.valOpts.MergePaths()
+	if err != nil {
+		return
+	}
+
+	optVals, err = o.valOpts.MergeValues()
+	if err != nil {
+		return
+	}
+
+	if o.valOpts.Mode == "" || o.valOpts.Mode == "noncloudnative" {
+		return o.runNonCloudNative(out, valuePaths, optVals)
+	} else if o.valOpts.Mode == "nondeploy" {
+		return o.runNonDeploy(out, valuePaths, optVals)
+	}
+	return fmt.Errorf("unsupported mode: %s, supported modes are 'noncloudnative' and 'nondeploy'", o.valOpts.Mode)
 }
 
 func renderTemplate(chartPath string, vals map[string]any, outPath string) error {

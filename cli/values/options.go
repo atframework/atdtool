@@ -15,6 +15,7 @@ import (
 type Options struct {
 	Values []string
 	Paths  []string
+	Mode   string
 }
 
 func (opts *Options) MergeValues() (map[string]interface{}, error) {
