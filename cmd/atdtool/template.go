@@ -115,6 +115,15 @@ func (o *templateOptions) runNonCloudNative(out io.Writer, valuePaths []string, 
 	}
 
 	for _, Instance := range nonCloudNativeCfg.Deploy.Instance {
+		var chrt *chart.Chart
+		chrt, err = loader.Load(filepath.Join(o.chartPath, Instance.Name))
+		if err != nil {
+			return fmt.Errorf("load chart(%s): %v", Instance.Name, err)
+		}
+		typeId, ok := chrt.Values["type_id"]
+		if !ok {
+			return fmt.Errorf("chart(%s) not found type_id", Instance.Name)
+		}
 		for i := uint64(0); i < Instance.InstanceCount; i++ {
 			insID := Instance.StartInstanceId + i
 			addrCom := []string{}
@@ -124,7 +133,7 @@ func (o *templateOptions) runNonCloudNative(out io.Writer, valuePaths []string, 
 			} else {
 				addrCom = append(addrCom, fmt.Sprint(nonCloudNativeCfg.Deploy.ZoneId))
 			}
-			addrCom = append(addrCom, fmt.Sprint(Instance.TypeId))
+			addrCom = append(addrCom, fmt.Sprint(typeId))
 			addrCom = append(addrCom, fmt.Sprint(insID))
 			busAddr := strings.Join(addrCom, ".")
 
@@ -152,9 +161,6 @@ func (o *templateOptions) runNonCloudNative(out io.Writer, valuePaths []string, 
 					}
 				}
 			}
-
-			copyOptVals["type_id"] = Instance.TypeId
-
 			nonCloudNativeOpt := &noncloudnative.RenderValue{
 				BusAddr: busAddr,
 				Config:  nonCloudNativeCfg,

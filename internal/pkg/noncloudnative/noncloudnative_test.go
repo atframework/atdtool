@@ -29,7 +29,6 @@ func TestLoadConfigFindsNestedDeployFile(t *testing.T) {
 		return
 	}
 	assert.Equal(t, "echo", cfg.Deploy.Instance[0].Name)
-	assert.Equal(t, "11", cfg.Deploy.Instance[0].TypeId)
 }
 
 func TestLoadConfigLaterPathOverridesEarlier(t *testing.T) {
@@ -47,7 +46,6 @@ func TestLoadConfigLaterPathOverridesEarlier(t *testing.T) {
 		return
 	}
 	assert.Equal(t, "override", cfg.Deploy.Instance[0].Name)
-	assert.Equal(t, "33", cfg.Deploy.Instance[0].TypeId)
 }
 
 func TestLoadConfigReturnsErrorWhenDeployMissing(t *testing.T) {

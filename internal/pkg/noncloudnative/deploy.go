@@ -10,7 +10,6 @@ import (
 
 type DeployUnit struct {
 	Name            string `json:"chart_name"`
-	TypeId          string `json:"instance_type_id"`
 	WorldInstance   bool   `json:"world_instance"`
 	InstanceCount   uint64 `json:"instance_count"`
 	StartInstanceId uint64 `json:"start_instance_id"`
