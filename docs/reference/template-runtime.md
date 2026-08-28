@@ -41,15 +41,39 @@ Helm 官方文档入口：
 | `.Values.bus_addr` | 由 world/zone/type/instance 组合生成 | 当前实例 bus 地址 |
 | `.Values.atdtool_running_platform` | 运行时 `runtime.GOOS` | 当前运行平台 |
 | `.Values.atappExternalIP` | `atdtool` 默认补齐 `127.0.0.1` | 外部 IP 缺省值；若 chart / values / `--set` 已提供则保留显式值 |
-| `.Values.type_id` | `deploy.yaml` 中的 `instance_type_id` | 当前实例类型 ID（无条件注入，不可被 `--set` 覆盖） |
+| `.Values.type_id` | chart 默认值 `values.yaml` 中的 `type_id` | 当前实例类型 ID（无条件注入，不可被 `--set` 覆盖） |
 
 补充说明：
 
-- `type_id` 由 `deploy.yaml` 中的 `instance_type_id` 无条件设置，优先级高于 `--set`。其他运行时值（`world_id`、`zone_id` 等）可通过 `--set global.*` 覆盖
+- `type_id` 来自 chart 默认值 `values.yaml` 中的 `type_id`，无条件设置，优先级高于 `--set`。其他运行时值（`world_id`、`zone_id` 等）可通过 `--set global.*` 覆盖
 - `atappExternalIP` 是模板运行时的默认补齐值，只在最终 `.Values` 中缺少该 key 时注入，默认值为 `127.0.0.1`
 - `global.*` 的命令行参数在 `template` 模式下会被扁平化到实例顶层 values 中，且 `--set global.*` 覆盖 `--set <实例名>.*` 的同名 key
 - `<实例名>.*` 的命令行参数只作用于对应实例
 - chart 自带的 `type_name` / `func_name` 不属于额外运行时值，但会影响服务级同名 yaml 的文件名解析
+
+### 3.1 `deploy_script` 模式额外注入的 `.Values`
+
+`--mode deploy_script` 不逐实例渲染，而是把整个实例清单注入到脚本模板的 `.Values`：
+
+| 变量 | 来源 | 说明 |
+| --- | --- | --- |
+| `.Values.world_id` | `deploy.yaml` 或 `--set global.world_id` | 部署 world |
+| `.Values.zone_id` | `deploy.yaml` 或 `--set global.zone_id` | 部署 zone |
+| `.Values.proc_groups` | `deploy.yaml` 的 `proc_desc` + chart 的 `type_id` | 分组后的启停批次 |
+
+`.Values.proc_groups` 的结构（组按 `group` 从小到大排序，缺省为 `0`；组内进程保持 `deploy.yaml` 声明顺序；同进程实例按 `instance_id` 升序）：
+
+```yaml
+proc_groups:
+  - group: 2
+    procs:
+      - name: cachesvr
+        instances:
+          - instance_id: 1
+            bus_addr: 1.0.15.1
+```
+
+其中 `bus_addr` 仍为 `world_id.zone_id.type_id.instance_id`，`type_id` 取自对应 chart 的 `values.yaml`，`world_instance: true` 的进程 zone 段为 `0`。
 
 ## 4. Values 的组成来源
 

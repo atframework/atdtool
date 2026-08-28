@@ -82,7 +82,7 @@
 
 对每个实例，会组装：
 
-- 实例专属 `type_id`
+- chart 默认值 `values.yaml` 中的 `type_id`（无条件注入，不可被 `--set` 覆盖）
 - `global.*` 命令行覆盖（扁平化后作用于所有实例）
 - `<实例名>.*` 命令行覆盖（只作用于对应实例）
 - 由 `deploy.yaml` 派生的 `world_id` / `zone_id` / `instance_id` / `bus_addr`

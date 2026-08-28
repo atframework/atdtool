@@ -25,6 +25,20 @@ atframework deploy tool , 用于atframework的部署工具。
 | `atdtool guid`         | 生成唯一 ID（雪花算法）                                              |
 | `atdtool watch`        | 监听文件变化并执行相关命令                                           |
 
+使用 `deploy_script` 模式可以根据 `deploy.yaml` 的 `proc_desc` 和 `group`，
+为指定平台渲染启停脚本：
+
+```bash
+atdtool template ./charts \
+  --mode deploy_script \
+  --scripts tools/start_all.sh.tpl,tools/stop_all.sh.tpl \
+  --values ./values/default \
+  --output ./target
+```
+
+`--scripts` 可以一次指定多个模板；同一次调用中的模板必须属于同一个 chart。
+生成的 `.sh` / `.ps1` 文件不会追加实例 `bus_addr` 后缀。
+
 ## 文档索引
 
 - 使用说明
@@ -62,7 +76,7 @@ atframework deploy tool , 用于atframework的部署工具。
 
 对于同一个 key，当前代码的真实优先级从高到低为：
 
-1. `template` 模式下无条件注入的 `type_id`（来自 `deploy.yaml`，不可被 `--set` 覆盖）
+1. `template` 模式下无条件注入的 `type_id`（来自 chart 默认值 `values.yaml` 中的 `type_id`，不可被 `--set` 覆盖）
 2. `--set`
 3. `template` 模式下按实例注入的运行时值（`world_id`、`zone_id`、`instance_id`、`bus_addr`、`atdtool_running_platform`）
 4. 后出现配置组路径中的 charts 同名 yaml
@@ -83,7 +97,7 @@ atdtool merge-values ./charts/example -p ./values/default,./values/dev -s log_le
 
 - `global.yaml` 并不会覆盖 chart 自带 `values.yaml` 的同名 key，它更适合作为“公共默认层”。
 - `modules/*.yaml` 更偏向“按需补齐层”：如果更高优先级来源已经写入同名 key，则模块不会再覆盖它。
-- `type_id` 由 `deploy.yaml` 中的 `instance_type_id` 无条件注入，`--set` 无法覆盖。而 `world_id`、`zone_id` 等运行时值可通过 `--set global.world_id` 等覆盖。
+- `type_id` 来自 chart 默认值 `values.yaml` 中的 `type_id`，无条件注入，`--set` 无法覆盖。而 `world_id`、`zone_id` 等运行时值可通过 `--set global.world_id` 等覆盖。
 - `atappExternalIP` 会在 `template` 模式下按默认值 `127.0.0.1` 补齐，仅当最终 `.Values` 中尚未定义该 key 时才注入。
 
 ## Modules 使用约定

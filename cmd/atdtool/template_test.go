@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -202,7 +203,7 @@ func TestTemplateOptionsRunGlobalOverridesInstanceSet(t *testing.T) {
 }
 
 func TestTemplateOptionsRunTypeIdFromDeploy(t *testing.T) {
-	// type_id is always set from deploy.yaml Instance.TypeId, not overridable via --set.
+	// type_id always comes from the chart values type_id, not overridable via --set.
 	outDir := t.TempDir()
 	o := &templateOptions{
 		chartPath: fixturePath("charts"),
@@ -225,7 +226,7 @@ func TestTemplateOptionsRunTypeIdFromDeploy(t *testing.T) {
 	}
 	text := string(data)
 
-	// type_id is unconditionally set to Instance.TypeId (42) after copying optVals.
+	// type_id is unconditionally set to the chart type_id (42) after copying optVals.
 	assert.Contains(t, text, "type_id: 42")
 }
 
@@ -252,4 +253,102 @@ func TestTemplateOptionsRunAllowsOverridingAtappExternalIP(t *testing.T) {
 	}
 
 	assert.Contains(t, string(data), "atapp_external_ip: 10.20.30.40")
+}
+
+func TestTemplateOptionsRunDeployScriptRendersSelectedScripts(t *testing.T) {
+	outDir := t.TempDir()
+	stdout := &bytes.Buffer{}
+	o := &templateOptions{
+		chartPath: fixturePath("charts"),
+		outPath:   outDir,
+		scripts:   []string{"tools/start_all.sh.tpl", "tools/stop_all.ps1.tpl"},
+		valOpts: values.Options{
+			Mode:  "deploy_script",
+			Paths: []string{fixturePath("values", "scripts")},
+		},
+	}
+
+	err := o.run(stdout)
+	if !assert.NoError(t, err) {
+		return
+	}
+
+	assert.Contains(t, stdout.String(), "create('tools/start_all.sh.tpl') deploy script success")
+	assert.Contains(t, stdout.String(), "create('tools/stop_all.ps1.tpl') deploy script success")
+
+	startAll, err := os.ReadFile(filepath.Join(outDir, "start_all.sh"))
+	if !assert.NoError(t, err) {
+		return
+	}
+	stopAll, err := os.ReadFile(filepath.Join(outDir, "stop_all.ps1"))
+	if !assert.NoError(t, err) {
+		return
+	}
+
+	startText := string(startAll)
+	// missing group is 0 and comes first, then group 5 in deploy order;
+	// instances of the same proc are sorted by instance id
+	wantOrder := []string{"1.0.42.9", "1.2.42.3", "1.2.42.4", "1.2.42.6", "1.2.42.7"}
+	last := -1
+	for _, addr := range wantOrder {
+		idx := strings.Index(startText, addr)
+		if !assert.Greater(t, idx, last, "bus addr %s out of order", addr) {
+			return
+		}
+		last = idx
+	}
+	assert.Contains(t, startText, "# group 0")
+	assert.Contains(t, startText, "# group 5")
+	assert.Contains(t, string(stopAll), "stop echo 1.0.42.9")
+	assert.Contains(t, string(stopAll), "stop echo 1.2.42.7")
+
+	// templates not requested by --scripts are not rendered
+	_, err = os.Stat(filepath.Join(outDir, "decoy"))
+	assert.True(t, os.IsNotExist(err))
+}
+
+func TestTemplateOptionsRunDeployScriptValidation(t *testing.T) {
+	baseOptions := func(scripts []string) *templateOptions {
+		return &templateOptions{
+			chartPath: fixturePath("charts"),
+			outPath:   t.TempDir(),
+			scripts:   scripts,
+			valOpts: values.Options{
+				Mode:  "deploy_script",
+				Paths: []string{fixturePath("values", "scripts")},
+			},
+		}
+	}
+
+	t.Run("requires scripts flag", func(t *testing.T) {
+		err := baseOptions(nil).run(&bytes.Buffer{})
+		if !assert.Error(t, err) {
+			return
+		}
+		assert.Contains(t, err.Error(), "--scripts")
+	})
+
+	t.Run("rejects scripts across charts", func(t *testing.T) {
+		err := baseOptions([]string{"tools/start_all.sh.tpl", "echo/cfg/echo.yaml.tpl"}).run(&bytes.Buffer{})
+		if !assert.Error(t, err) {
+			return
+		}
+		assert.Contains(t, err.Error(), "same chart(tools)")
+	})
+
+	t.Run("rejects unknown script template", func(t *testing.T) {
+		err := baseOptions([]string{"tools/missing.sh.tpl"}).run(&bytes.Buffer{})
+		if !assert.Error(t, err) {
+			return
+		}
+		assert.Contains(t, err.Error(), "not found in chart(tools)")
+	})
+
+	t.Run("rejects escaping chart root", func(t *testing.T) {
+		err := baseOptions([]string{"tools/../echo/cfg/echo.yaml.tpl"}).run(&bytes.Buffer{})
+		if !assert.Error(t, err) {
+			return
+		}
+		assert.Contains(t, err.Error(), "relative path under CHART")
+	})
 }

@@ -1,0 +1,20 @@
+world_id: 1
+zone_id: 2
+
+proc_desc:
+  - chart_name: echo
+    world_instance: false
+    instance_count: 2
+    start_instance_id: 3
+    group: 5
+
+  - chart_name: echo
+    world_instance: true
+    instance_count: 1
+    start_instance_id: 9
+
+  - chart_name: echo
+    world_instance: false
+    instance_count: 2
+    start_instance_id: 6
+    group: 5

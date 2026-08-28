@@ -66,7 +66,7 @@
 | `.Values.bus_addr` | 当前实例的 bus 地址 |
 | `.Values.atdtool_running_platform` | 当前运行平台，例如 `windows` / `linux` |
 | `.Values.atappExternalIP` | 外部 IP 缺省值，默认 `127.0.0.1`，如果其他来源已定义则保留原值 |
-| `.Values.type_id` | 当前实例的 `instance_type_id` |
+| `.Values.type_id` | chart 默认值 `values.yaml` 中的 `type_id` |
 
 更完整的模板接口清单见：
 
@@ -113,6 +113,56 @@ atdtool template ./charts \
 当实例地址为 `1.2.65.3` 时，输出文件可能为：
 
 - `cfg/example_1.2.65.3.yaml`
+
+## `deploy_script` 模式（渲染启停脚本）
+
+`--mode deploy_script` 面向“生成 `start_all` / `stop_all` 等部署脚本”的场景：
+
+- 不再逐实例渲染配置，而是把**整个实例清单**（服务名、`bus_addr`、分组）注入 values 后，渲染**指定的脚本模板**
+- 脚本模板通过 `--scripts` 显式指定，路径相对 `CHART` 根目录，可以一次传多个（逗号分隔）
+- 所有 `--scripts` 必须属于同一个 chart 目录
+
+```bash
+atdtool template ./charts \
+  -m deploy_script \
+  --scripts tools/start_all.sh.tpl,tools/stop_all.sh.tpl \
+  -p ./values/default \
+  -o ./target
+```
+
+输出规则：
+
+- 渲染结果直接写入 `<output>/`，例如上面的命令生成 `./target/start_all.sh`
+- 输出文件名去掉 `.tpl` 后缀，且**不会**追加 `bus_addr` 后缀
+- 只有 `--scripts` 指定的模板会被渲染，chart 中其他 `.tpl` 文件不受影响
+
+模板中可用的额外 values（见 [`../reference/template-runtime.md`](../reference/template-runtime.md)）：
+
+```yaml
+world_id: 1
+zone_id: 2
+proc_groups:
+  - group: 0                # group 缺省为 0
+    procs:
+      - name: orbit-controller
+        instances:
+          - instance_id: 1
+            bus_addr: 1.1.27.1
+  - group: 2
+    procs:
+      - name: cachesvr
+        instances:
+          - instance_id: 1
+            bus_addr: 1.0.15.1
+```
+
+排序约定：
+
+- 按 `group` **从小到大**分组，`group` 缺省（未写）视为 `0`
+- 同一 group 内的进程保持 `deploy.yaml` 的声明顺序
+- 同一进程的多个实例按 `instance_id` 从小到大排序
+
+`--set global.world_id` / `--set global.zone_id` 会同时作用于 `bus_addr` 计算，与 `noncloudnative` 模式保持一致。
 
 ## 非云原生 deploy.yaml 的当前语义
 

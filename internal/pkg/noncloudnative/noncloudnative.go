@@ -13,6 +13,7 @@ import (
 
 type RenderValue struct {
 	BusAddr string  `json:"busAddr,omitempty"`
+	TypeId  uint64  `json:"typeId,omitempty"`
 	Config  *Config `json:"config,omitempty"`
 }
 

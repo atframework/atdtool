@@ -1,4 +1,5 @@
 type_name: echo
+type_id: 42
 proc_name: echod
 shared: chart
 extra:

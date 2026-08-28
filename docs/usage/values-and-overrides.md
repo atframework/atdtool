@@ -46,7 +46,7 @@
 
 对于同一个 key，当前实现的真实优先级从高到低为：
 
-1. `template` 模式下无条件注入的 `type_id`（来自 `deploy.yaml`，不可被 `--set` 覆盖）
+1. `template` 模式下无条件注入的 `type_id`（来自 chart 默认值 `values.yaml` 中的 `type_id`，不可被 `--set` 覆盖）
 2. `--set`
 3. `template` 模式下的实例运行时值（`world_id`、`zone_id`、`instance_id`、`bus_addr`、`atdtool_running_platform`）
 4. 后 path 的 charts 同名 yaml
@@ -62,7 +62,7 @@
 - `global.yaml` 不会覆盖 chart 默认值
 - 模块配置不会覆盖服务级同名 yaml
 - 模块更像一个“默认补全层”
-- `type_id` 由 `deploy.yaml` 中的 `instance_type_id` 无条件注入，`--set` 无法覆盖。而 `world_id`、`zone_id` 等运行时值可通过 `--set global.world_id` 等覆盖
+- `type_id` 来自 chart 默认值 `values.yaml` 中的 `type_id`，无条件注入，`--set` 无法覆盖。而 `world_id`、`zone_id` 等运行时值可通过 `--set global.world_id` 等覆盖
 - 此外，`template` 模式会在最终 `.Values` 缺少 `atappExternalIP` 时补齐默认值 `127.0.0.1`；它是默认值，不是高优先级覆盖层
 
 ## 深度合并行为

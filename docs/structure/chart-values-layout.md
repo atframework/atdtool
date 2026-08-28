@@ -163,10 +163,10 @@ project/
 - `zone_id`
 - `proc_desc`
   - `chart_name`
-  - `instance_type_id`
   - `world_instance`
   - `instance_count`
   - `start_instance_id`
+  - `group`（可选，缺省为 `0`，供 `deploy_script` 模式分组启停）
 
 ## 5. 输出目录的典型结构
 

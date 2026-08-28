@@ -79,6 +79,12 @@ func MergeChartValues(chartPath string, valuesPaths []string, optVals map[string
 		values = chartutil.CoalesceTables(optVals, values)
 	}
 
+	// type_id is always provided by deploy.yaml and can not be overridden
+	// by --set or any other values source
+	if nonCloudNativeVal != nil {
+		values["type_id"] = nonCloudNativeVal.TypeId
+	}
+
 	values, err = mergeEnabledModuleValues(valuesPaths, values)
 	if err != nil {
 		return
